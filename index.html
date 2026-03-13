@@ -665,6 +665,28 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 #pick-turn-indicator.ai-thinking{animation:aiPulse 0.9s ease-in-out infinite}
 @keyframes cardPop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
 .char-card.ai-chosen{animation:cardPop 0.4s ease}
+
+/* ── QOL: target panel improvements ── */
+.tgbtn{width:100%;text-align:left;padding:8px 12px;display:flex;align-items:center;gap:10px;background:var(--bg3);border:1px solid var(--rim2);border-radius:6px;color:var(--txt);cursor:pointer;font-family:var(--fU);font-size:14px;transition:all .15s}
+.tgbtn:hover{background:var(--bg4);border-color:var(--c2);color:#fff;transform:translateX(3px)}
+.tg-hp{margin-left:auto;font-family:var(--fM);font-size:11px;color:var(--txt2);text-align:right;line-height:1.4}
+
+/* ── QOL: stun skip button glow ── */
+.ai-waiting{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:8px;font-family:var(--fM);font-size:13px;letter-spacing:2px;color:var(--txt2)}
+
+/* ── QOL: dead fighters dimmer ── */
+.fighter.dead{opacity:.35;filter:grayscale(1);pointer-events:none}
+
+/* ── QOL: smooth log entry appear ── */
+@keyframes logSlide{from{opacity:0;transform:translateX(-6px)}to{opacity:1;transform:none}}
+.log-entry{animation:logSlide .2s ease}
+
+/* ── QOL: fight button pulse when ready ── */
+@keyframes fightReady{0%,100%{box-shadow:0 0 12px rgba(255,85,0,.4)}50%{box-shadow:0 0 28px rgba(255,85,0,.9)}}
+#start-btn:not([disabled]){animation:fightReady 1.6s ease-in-out infinite}
+
+/* ── QOL: HUD alive counter ── */
+#hud-t1,#hud-t2{font-family:var(--fM);font-size:13px;letter-spacing:1px}
 </style>
 </head>
 <body>
@@ -1101,7 +1123,7 @@ class Engine{
   act(atype,skey,tids){
     const actor=this.getCur();
     if(!actor||!actor.alive){this.next();return this.snap()}
-    if(actor.stunned){this.addLog(`😵 ${actor.name} is stunned! Turn skipped!`,'stun');this.next();return this.snap()}
+    if(atype==='pass'||actor.stunned){this.addLog(`😵 ${actor.name} is stunned! Turn skipped!`,'stun');this.next();return this.snap()}
     const enemies=this.enemies(),allies=this.allies().filter(c=>c.id!==actor.id);
     const allC=this.all();
     let fx=[];
@@ -1185,9 +1207,11 @@ const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id
       safetyCounter++;
       if(safetyCounter>32)break; // prevent infinite loop
       if(this.cIdx>=nt.length){
+        const prevTeam=this.cTeam;
         this.cTeam=this.cTeam===1?2:1;this.cIdx=0;
         nt=this.cTeam===1?this.t1:this.t2;
-        this.round++;this.tickDots();
+        // Only increment round and tick DoTs when T1 starts their turn (full round complete)
+        if(this.cTeam===1){this.round++;this.tickDots();}
       }
       const nx=nt[this.cIdx];
       if(!nx){this.cIdx++;continue}
@@ -1318,7 +1342,7 @@ const G={
 
   // AI picks a random unchosen character for Team 2 with a visible delay
   aiDraftPick(){
-    if(this.t2.length>=4)return;
+    if(this.t2.length>=4){this.aiPicking=false;this.updPickTurnUI();this.updBtn();return;}
     this.aiPicking=true;
     this.updPickTurnUI();
     // Dramatic pause — AI "thinking"
@@ -1348,11 +1372,18 @@ const G={
       this.aiPicking=false;
       this.updSlots();
       this.updBtn();
-      // After AI picks, it's player's turn again (unless both teams are full)
-      if(this.t1.length<4){
+      this.updPickTurnUI();
+      // After AI picks — if player still has picks left, give turn back; otherwise check if AI needs more
+      if(this.t1.length<4&&this.t2.length<4){
+        this.pickTurn=1; // player's turn
+      } else if(this.t1.length>=4&&this.t2.length<4){
+        // Player is done, AI keeps picking solo
+        this.pickTurn=2;
+        this.updPickTurnUI();
+        this.aiDraftPick();
+      } else {
         this.pickTurn=1;
       }
-      this.updPickTurnUI();
     }, thinkTime);
   },
 
@@ -1441,18 +1472,29 @@ const G={
   },
 
   rmv(team,id){
+    if(this.aiPicking)return; // don't allow removal during AI turn
     if(team===1)this.t1=this.t1.filter(x=>x!==id);else this.t2=this.t2.filter(x=>x!==id);
     document.querySelectorAll(`.char-card[data-id="${id}"]`).forEach(c=>c.classList.remove('sel-t1','sel-t2'));
-    this.updSlots();this.updBtn();
+    // Recalculate whose turn it is after removal
+    if(this.mode==='pve'){
+      this.pickTurn=1; // always player's turn after un-pick in PVE
+    } else {
+      this.pickTurn=this.calcPickTurn();
+    }
+    this.updSlots();this.updPickTurnUI();this.updBtn();
   },
 
   updBtn(){
     const btn=document.getElementById('start-btn');if(!btn)return;
-    const rdy=this.mode==='pve'?this.t1.length===4:(this.t1.length===4&&this.t2.length===4);
-    const total=this.t1.length+(this.mode==='pve'?0:this.t2.length);
-    const needed=this.mode==='pve'?4:8;
+    // PVE: player needs 4, and AI must have also finished picking (t2=4), and no AI animation running
+    const rdy=this.mode==='pve'
+      ?(this.t1.length===4&&this.t2.length===4&&!this.aiPicking)
+      :(this.t1.length===4&&this.t2.length===4);
+    const total=this.t1.length+this.t2.length;
     btn.disabled=!rdy;
-    btn.textContent=rdy?'⚔ FIGHT!':`PICK FIGHTERS (${total}/${needed})`;
+    if(this.aiPicking)btn.textContent='🤖 AI PICKING...';
+    else if(rdy)btn.textContent='⚔ FIGHT!';
+    else btn.textContent=`PICK FIGHTERS (${total}/8)`;
   },
 
   setMode(m){this.mode=m},
@@ -1491,7 +1533,7 @@ const G={
       d.innerHTML=`
         <div class="f-emo">${ch.alive?ch.emoji:'💀'}</div>
         <div class="f-info">
-          <div class="f-name-row"><span class="f-name">${ch.name}</span><span class="jjk-rank jjk-${ch.jjkRank||'3'}<span class="f-badges">${badges}</span></div>
+          <div class="f-name-row"><span class="f-name">${ch.name}</span><span class="jjk-rank jjk-${ch.jjkRank||'3級'}">${ch.jjkRank||'3級'}</span><span class="f-badges">${badges}</span></div>
           <div class="f-hp-wrap">
             <div class="f-hp-track"><div class="f-hp-fill" style="width:${pct}%;background:${hc}"></div></div>
             <div class="f-hp-num">${ch.hp}/${ch.maxHp}${ch.shield>0?` 🛡${ch.shield}`:''}</div>
@@ -1509,8 +1551,12 @@ const G={
     const p=document.getElementById('action-inner');
     const actor=st.cChar;
     const isPlayer=st.cTeam===1||this.mode==='pvp';
-    if(!actor||!isPlayer||st.state!=='BATTLE'){
-      p.innerHTML=`<div class="ai-waiting">AI THINKING<span class="ai-dots"></span></div>`;return;
+    if(!actor||st.state!=='BATTLE'){p.innerHTML=`<div class="ai-waiting">AI THINKING<span class="ai-dots"></span></div>`;return;}
+    if(!isPlayer){p.innerHTML=`<div class="ai-waiting">🤖 AI THINKING<span class="ai-dots"></span></div>`;return;}
+    if(actor.stunned){
+      p.innerHTML=`<div class="ai-waiting" style="color:var(--gold)">😵 ${actor.name.toUpperCase()} IS STUNNED — TURN SKIPPED<br><span style="font-size:12px;opacity:.6;font-family:var(--fM)">${actor.stunDur} turn(s) remaining</span></div>
+      <div style="text-align:center;margin-top:12px"><button class="btn-ghost" style="font-size:13px;padding:8px 28px" onclick="G.doStunSkip()">⏭ SKIP TURN</button></div>`;
+      return;
     }
     const sk=actor.skills||{};
     const mkBtn=(key,icon,s,extra='')=>{
@@ -1527,7 +1573,7 @@ const G={
         <div class="actor-emo">${actor.emoji}</div>
         <div class="actor-info">
           <div class="actor-name">${actor.name}</div>
-          <div class="actor-role">${actor.rarity} · ${actor.role}</div><div class="actor-jjk"><span class="jjk-rank jjk-${actor.jjkRank||'3級'}">${actor.jjkRank||'3級'} — ${actor.jjkRankEn||''}</span></div>
+          <div class="actor-role">${actor.role}</div><div class="actor-jjk"><span class="jjk-rank jjk-${actor.jjkRank||'3級'}">${actor.jjkRank||'3級'} — ${actor.jjkRankEn||''}</span></div>
           <div class="actor-stats"><span>⚡ <b>${actor.stamina}/${actor.maxStamina}</b></span><span>💥 <b>${actor.tv}/10</b></span><span>❤️ <b>${actor.hp}/${actor.maxHp}</b></span></div>
         </div>
       </div>
@@ -1555,10 +1601,13 @@ const G={
 
   updHud(st){
     const s=(id,v)=>{const el=document.getElementById(id);if(el)el.textContent=v};
+    const alive1=st.t1.filter(c=>c.alive).length, alive2=st.t2.filter(c=>c.alive).length;
     s('hud-round',`ROUND ${st.round}`);
+    s('hud-t1',`⚡ TEAM 1  [${alive1}/4]`);
+    s('hud-t2',`[${alive2}/4]  TEAM 2 🔥`);
     if(st.cChar){
       const it1=st.cTeam===1;
-      s('hud-turn',`${it1?'▶ TEAM 1':'▶ TEAM 2'}: ${st.cChar.name}'S TURN`);
+      s('hud-turn',`${it1?'▶ T1':'▶ T2'}: ${st.cChar.name}'s turn`);
       const tr=document.getElementById('hud-turn');
       if(tr){tr.style.color=it1?'var(--c1)':'var(--c2)'}
     }
@@ -1566,10 +1615,13 @@ const G={
 
   renderLog(entries){
     const c=document.getElementById('log-feed');c.innerHTML='';
-    entries.slice(0,35).forEach(e=>{
+    // Show last 35 entries, newest at bottom
+    entries.slice(-35).forEach(e=>{
       const d=document.createElement('div');d.className=`log-entry ${e.type}`;
-      d.textContent=`R${e.r} ${e.msg}`;c.appendChild(d);
+      d.textContent=`R${e.r||'—'} ${e.msg}`;c.appendChild(d);
     });
+    // Auto-scroll to bottom
+    requestAnimationFrame(()=>{c.scrollTop=c.scrollHeight});
   },
 
   useSk(key){
@@ -1592,15 +1644,10 @@ const G={
     let cands=[];
     if(mode==='enemy')cands=(st.cTeam===1?st.t2:st.t1).filter(c=>c.alive);
     else cands=(st.cTeam===1?st.t1:st.t2).filter(c=>c.alive);
-    if(mode==='enemy'&&cands.length>1){
-      const b=document.createElement('button');b.className='tgbtn';
-      b.innerHTML=`<span>⚡</span><span>ALL ENEMIES</span><span class="tg-hp">${cands.length} targets</span>`;
-      b.addEventListener('click',()=>this.execWith(cands.map(c=>c.id)));
-      list.appendChild(b);
-    }
+
     cands.forEach(ch=>{
       const b=document.createElement('button');b.className='tgbtn';
-      b.innerHTML=`<span>${ch.emoji}</span><span>${ch.name}</span><span class="tg-hp">${ch.hp}HP (${Math.round(ch.hp/ch.maxHp*100)}%)</span>`;
+      b.innerHTML=`<span>${ch.emoji}</span><span>${ch.name}<span style="font-size:10px;opacity:.6;display:block">${ch.role}</span></span><span class="tg-hp">${ch.hp}/${ch.maxHp}HP${ch.shield>0?` 🛡${ch.shield}`:''}<br><span style="font-size:9px;opacity:.5">⚡${ch.tv}/10</span></span>`;
       b.addEventListener('click',()=>this.execWith([ch.id]));
       list.appendChild(b);
     });
@@ -1617,6 +1664,11 @@ const G={
     this.pendSk=null;
     const p=document.getElementById('tgt-panel'),s=document.getElementById('sk-list');
     if(p)p.classList.remove('show');if(s)s.style.display='';
+  },
+
+  doStunSkip(){
+    const st=this.eng.act('pass',null,[]);
+    this.render(st);
   },
 
   execWith(tids){
