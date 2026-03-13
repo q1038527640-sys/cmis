@@ -997,19 +997,19 @@ class Engine{
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length&&enemies.length)tgts.push(enemies[0]);
       this.addLog(`🔥 ${actor.name}使用${sk.name}！`,'action');
-      try{fx=sk.exec(actor,tgts,allC,allies)||[]}catch(e){console.error(e)}
+      try{fx=sk.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Skill error:',e);fx=[]}
     }else if(atype==='ultimate'){
       if(actor.tv<10){this.addLog(`⚠️ 触发值不足(${actor.tv}/10)！`,'warning');return this.snap()}
       actor.tv=0;
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length)tgts.push(...enemies);
       this.addLog(`💥 ${actor.name}大招：${actor.skills.ultimate.name}！`,'ultimate');
-      try{fx=actor.skills.ultimate.exec(actor,tgts,allC,allies)||[]}catch(e){console.error(e)}
+      try{fx=actor.skills.ultimate.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Ultimate error:',e);fx=[]}
     }else if(atype==='reminisce'){
       if(actor.remUsed){this.addLog('⚠️ 回想已使用！','warning');return this.snap()}
       actor.remUsed=true;
       this.addLog(`💫 ${actor.name}回想：${actor.reminisce?.name}！`,'reminisce');
-      try{fx=actor.reminisce?.exec(actor,this.cTeam===1?this.t1:this.t2,this.cTeam===1?this.t2:this.t1)||[]}catch(e){console.error(e)}
+      try{fx=actor.reminisce?.exec(actor,this.cTeam===1?this.t1:this.t2,this.cTeam===1?this.t2:this.t1)||[]}catch(e){console.error('Reminisce error:',e);fx=[]}
     }
     this.applyFx(fx);
     const w=this.winner();
@@ -1018,35 +1018,38 @@ class Engine{
     return this.snap();
   }
   applyFx(fx){
+    if(!fx||!Array.isArray(fx))return;
     const all=[...this.t1,...this.t2];
     for(const f of fx){
+      if(!f)continue;
       const t=all.find(c=>c.id===f.target);
       if(f.text)this.addLog(f.text,f.type||'info');
       if(!t&&f.type!=='text')continue;
       switch(f.type){
         case'damage':{
-          const loc=this.loc();let dmg=f.amount;
+          if(!t)break;
+          const loc=this.loc();let dmg=f.amount||0;
           if(loc==='head')dmg=Math.floor(dmg*1.5);
           if(loc==='dodge'){this.addLog(`💨 ${t.name}躲避！`,'dodge');break}
           if(t.shield>0){const ab=Math.min(t.shield,Math.floor(dmg*.5));t.shield-=ab;dmg-=ab}
           t.hp=Math.max(0,t.hp-dmg);
           this.addLog(`💢 ${t.name}-${dmg}${loc==='head'?' 💥爆头':''}！HP:${t.hp}`,'damage');
           if(t.hp<=0)this.kill(t);break}
-        case'truedamage':t.hp=Math.max(0,t.hp-f.amount);this.addLog(`☠️ ${t.name}真伤-${f.amount}！HP:${t.hp}`,'truedamage');if(t.hp<=0)this.kill(t);break;
-        case'heal':{const ov=Math.max(0,(t.hp+f.amount)-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+f.amount);if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name}回复${f.amount}，溢出${ov}→护盾！`,'heal')}else this.addLog(`💚 ${t.name}回复${f.amount}(${t.hp}/${t.maxHp})`,'heal');break}
-        case'shield':t.shield=(t.shield||0)+f.amount;this.addLog(`🛡️ ${t.name}+${f.amount}护盾！`,'shield');break;
-        case'stun':t.stunned=true;t.stunDur=f.dur||1;break;
-        case'buff':t.buffs.push({stat:f.stat||f.stat,value:f.val,duration:f.dur});break;
-        case'debuff':t.debuffs.push({stat:f.stat,value:f.val,duration:f.dur});break;
-        case'dot':t.dots.push({amount:f.amount,duration:f.dur||4});break;
-        case'stamina':t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));break;
-        case'stealStamina':{const fr=all.find(c=>c.id===f.from),to=all.find(c=>c.id===f.to);if(fr&&to){const s=Math.min(fr.stamina,f.amount||1);fr.stamina-=s;to.stamina=Math.min(to.maxStamina,to.stamina+s)}break}
-        case'mark':t.marks=t.marks||{};t.marks[f.mtype]=Math.min(f.max||3,(t.marks[f.mtype]||0)+(f.stacks||1));break;
-        case'cleanse':t.debuffs=(t.debuffs||[]).slice(f.count||1);break;
-        case'curse':t.curses.push({skipChance:f.skipChance,trueDmgRatio:f.trueDmgRatio,duration:f.dur||2});break;
-        case'sitout':t.sitOut=f.dur||2;t.alive=false;break;
-        case'ko':this.kill(t);break;
-        case'reduceTrigger':t.tv=Math.max(0,t.tv-(f.amount||1));break;
+        case'truedamage':if(!t)break;t.hp=Math.max(0,t.hp-(f.amount||0));this.addLog(`☠️ ${t.name}真伤-${f.amount}！HP:${t.hp}`,'truedamage');if(t.hp<=0)this.kill(t);break;
+        case'heal':{if(!t)break;const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+(f.amount||0));if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name}回复${f.amount}，溢出${ov}→护盾！`,'heal')}else this.addLog(`💚 ${t.name}回复${f.amount}(${t.hp}/${t.maxHp})`,'heal');break}
+        case'shield':if(!t)break;t.shield=(t.shield||0)+(f.amount||0);this.addLog(`🛡️ ${t.name}+${f.amount}护盾！`,'shield');break;
+        case'stun':if(!t)break;t.stunned=true;t.stunDur=(f.dur||f.duration||1);break;
+        case'buff':if(!t)break;t.buffs.push({stat:f.stat,value:(f.val!==undefined?f.val:f.value)||0,duration:(f.dur||f.duration||1)});break;
+        case'debuff':if(!t)break;t.debuffs.push({stat:f.stat,value:(f.val!==undefined?f.val:f.value)||0,duration:(f.dur||f.duration||1)});break;
+        case'dot':if(!t)break;t.dots.push({amount:(f.amount||0),duration:(f.dur||f.duration||4)});break;
+        case'stamina':if(!t)break;t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));break;
+        case'stealStamina':{const fr=all.find(c=>c.id===f.from),to=all.find(c=>c.id===f.to);if(fr&&to){const stolen=Math.min(fr.stamina,f.amount||1);fr.stamina-=stolen;to.stamina=Math.min(to.maxStamina,to.stamina+stolen)}break}
+        case'mark':if(!t)break;t.marks=t.marks||{};t.marks[f.mtype]=Math.min(f.max||3,(t.marks[f.mtype]||0)+(f.stacks||1));break;
+        case'cleanse':if(!t)break;t.debuffs=(t.debuffs||[]).slice(f.count||1);break;
+        case'curse':if(!t)break;t.curses.push({skipChance:f.skipChance||0.5,trueDmgRatio:f.trueDmgRatio||0.1,duration:(f.dur||f.duration||2)});break;
+        case'sitout':if(!t)break;t.sitOut=(f.dur||f.duration||2);t.alive=false;break;
+        case'ko':if(!t)break;this.kill(t);break;
+        case'reduceTrigger':if(!t)break;t.tv=Math.max(0,t.tv-(f.amount||1));break;
       }
     }
   }
@@ -1058,19 +1061,22 @@ class Engine{
     if(actor){this.tickFx(actor);if(actor.alive){actor.stamina=Math.min(actor.maxStamina,actor.stamina+1);actor.turnCount=(actor.turnCount||0)+1}}
     this.cIdx++;
     let nt=this.cTeam===1?this.t1:this.t2;
+    let safetyCounter=0;
     while(true){
+      safetyCounter++;
+      if(safetyCounter>32)break; // prevent infinite loop
       if(this.cIdx>=nt.length){
         this.cTeam=this.cTeam===1?2:1;this.cIdx=0;
         nt=this.cTeam===1?this.t1:this.t2;
         this.round++;this.tickDots();
       }
       const nx=nt[this.cIdx];
-      if(!nx)break;
+      if(!nx){this.cIdx++;continue}
       if(nx.sitOut>0){nx.sitOut--;if(nx.sitOut<=0){nx.alive=true;nx.stamina=Math.min(nx.maxStamina,nx.stamina+2);this.addLog(`🔙 ${nx.name}回归！`,'return')}this.cIdx++;continue}
       if(nx.alive)break;
       this.cIdx++;
     }
-    const na=nt[this.cIdx];
+    const na=(this.cTeam===1?this.t1:this.t2)[this.cIdx];
     if(na&&na.stunned){na.stunDur--;if(na.stunDur<=0){na.stunned=false;this.addLog(`😤 ${na.name}恢复！`,'info')}}
   }
   tickFx(c){
@@ -1348,9 +1354,9 @@ const G={
   },
 
   execWith(tids){
-    this.cancelTgt();
     if(!this.pendSk)return;
     const sk=this.pendSk;this.pendSk=null;
+    this.cancelTgt();
     const atype=sk==='reminisce'?'reminisce':sk==='ultimate'?'ultimate':'skill';
     const st=this.eng.act(atype,sk,tids);
     this.render(st);
