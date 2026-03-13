@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>清迈国际格斗 Ver 2.4</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+<!-- ════════════════════════════════════
+     TITLE SCREEN
+     ════════════════════════════════════ -->
+<div id="title-screen" class="screen active">
+  <div class="title-logo">
+    <div class="title-main">清迈国际格斗</div>
+    <div class="title-sub">CHIANGMAI INTERNATIONAL COMBAT</div>
+    <div class="title-ver">OFFICIAL SERVER Ver 2.4 · 4v4 FORMAT</div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:center;gap:16px">
+    <button class="btn-primary" onclick="Game.showScreen('select-screen')">
+      ⚔️ START GAME
+    </button>
+    <button class="btn-secondary" onclick="Game.autoFillTeams(); Game.showScreen('select-screen')">
+      🎲 QUICK MATCH (随机)
+    </button>
+  </div>
+
+  <div style="font-size:13px;color:var(--text-dim);letter-spacing:2px;text-align:center;max-width:400px;line-height:1.8">
+    14 可选角色 · 真实技能系统 · 触发值大招机制<br>
+    护盾系统 · 体力系统 · 爆头/闪避判定
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     CHARACTER SELECT SCREEN
+     ════════════════════════════════════ -->
+<div id="select-screen" class="screen">
+  <div class="select-header">
+    <h2>⚔ 选择角色 CHARACTER SELECT</h2>
+    <div style="margin-top:8px;display:flex;justify-content:center;gap:12px">
+      <button class="btn-secondary mode-btn active-mode" id="mode-pvp" onclick="Game.setVsMode('pvp')" style="font-size:13px;padding:8px 20px">
+        👥 PvP 双人对战
+      </button>
+      <button class="btn-secondary mode-btn" id="mode-pve" onclick="Game.setVsMode('pve')" style="font-size:13px;padding:8px 20px">
+        🤖 PvE 单人挑战
+      </button>
+      <button class="btn-secondary" onclick="Game.backToTitle()" style="font-size:13px;padding:8px 20px">
+        ← 返回
+      </button>
+    </div>
+  </div>
+
+  <div class="select-body">
+
+    <!-- TEAM 1 -->
+    <div class="team-panel team1-panel">
+      <h3>⚡ TEAM 1</h3>
+      <div id="team1-slot-1" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 1</span></div>
+      <div id="team1-slot-2" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 2</span></div>
+      <div id="team1-slot-3" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 3</span></div>
+      <div id="team1-slot-4" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 4</span></div>
+      <div class="team-select-info">已选: <span id="t1-count">0/4</span></div>
+    </div>
+
+    <!-- ROSTER -->
+    <div class="roster-panel">
+      <h3>🏆 角色图鉴 ROSTER</h3>
+      <div class="char-grid" id="char-grid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- TEAM 2 -->
+    <div class="team-panel team2-panel">
+      <h3>🔥 TEAM 2</h3>
+      <div id="team2-slot-1" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 1</span></div>
+      <div id="team2-slot-2" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 2</span></div>
+      <div id="team2-slot-3" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 3</span></div>
+      <div id="team2-slot-4" class="selected-slot"><span style="color:var(--text-dim);font-size:12px">空位 4</span></div>
+      <div class="team-select-info" id="team2-panel-info">已选: <span id="t2-count">0/4</span></div>
+    </div>
+
+  </div>
+
+  <div class="select-footer">
+    <div class="start-battle-wrap">
+      <div class="select-count">各队选择4名角色开始战斗</div>
+      <button class="btn-primary" id="start-battle-btn" onclick="Game.startBattle()" disabled>
+        选择角色 (0/8)
+      </button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     BATTLE SCREEN
+     ════════════════════════════════════ -->
+<div id="battle-screen" class="screen">
+
+  <!-- Header -->
+  <div class="battle-header">
+    <div class="battle-title">⚔ CMAC BATTLE</div>
+    <div class="turn-team-label" id="turn-team-label">—</div>
+    <div class="turn-indicator">
+      <span id="turn-count">回合 1</span>
+    </div>
+    <button class="btn-danger" onclick="Game.restart()" style="font-size:12px;padding:6px 14px">⬅ 退出</button>
+  </div>
+
+  <!-- Teams -->
+  <div class="battle-arena">
+    <!-- Team 1 -->
+    <div class="team-area team1-area">
+      <div class="team-area-header">⚡ TEAM 1 — 玩家一</div>
+      <div class="char-row" id="team1-chars"></div>
+    </div>
+    <!-- Team 2 -->
+    <div class="team-area team2-area">
+      <div class="team-area-header">🔥 TEAM 2 — 玩家二 / AI</div>
+      <div class="char-row" id="team2-chars"></div>
+    </div>
+  </div>
+
+  <!-- Action + Log -->
+  <div class="battle-middle">
+
+    <!-- Action Panel -->
+    <div class="action-panel">
+      <div class="action-panel-title">🎮 行动面板 ACTION PANEL</div>
+      <div id="action-panel-inner">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- Battle Log -->
+    <div class="battle-log">
+      <div class="log-title">📜 战斗日志 BATTLE LOG</div>
+      <div class="log-entries" id="log-entries">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     GAME OVER SCREEN
+     ════════════════════════════════════ -->
+<div id="gameover-screen" class="screen">
+  <div class="winner-banner winner-team1" id="winner-banner">TEAM 1 获胜！</div>
+  <div class="winner-sub" id="winner-sub">🏆 光荣的胜利！</div>
+
+  <div class="gameover-btns">
+    <button class="btn-primary" onclick="Game.restart()">
+      ⚔️ 再来一局
+    </button>
+    <button class="btn-secondary" onclick="Game.backToTitle()">
+      🏠 返回主菜单
+    </button>
+  </div>
+</div>
+
+
+<!-- ════════════════════════════════════
+     SCRIPTS
+     ════════════════════════════════════ -->
+<script src="js/characters.js"></script>
+<script src="js/battle.js"></script>
+<script src="js/main.js"></script>
+
+<style>
+  /* Inline style for mode button active state */
+  .mode-btn.active-mode {
+    border-color: var(--accent-cyan);
+    color: var(--accent-cyan);
+    background: rgba(0,245,255,0.08);
+  }
+</style>
+
+</body>
+</html>
