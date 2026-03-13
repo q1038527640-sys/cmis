@@ -659,6 +659,12 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .char-card[data-jjk="1級"]::before{background:linear-gradient(135deg,#dc143c,#8b0000)}
 .char-card[data-jjk="2級"]::before{background:linear-gradient(135deg,#1e90ff,#0050aa)}
 .char-card[data-jjk="3級"]::before{background:linear-gradient(135deg,#2e8b57,#145a32)}
+
+/* ── AI DRAFT PICKING ANIMATION ── */
+@keyframes aiPulse{0%,100%{opacity:1;box-shadow:0 0 8px rgba(176,106,255,.4)}50%{opacity:.7;box-shadow:0 0 20px rgba(176,106,255,.8)}}
+#pick-turn-indicator.ai-thinking{animation:aiPulse 0.9s ease-in-out infinite}
+@keyframes cardPop{0%{transform:scale(1)}50%{transform:scale(1.12)}100%{transform:scale(1)}}
+.char-card.ai-chosen{animation:cardPop 0.4s ease}
 </style>
 </head>
 <body>
@@ -1230,6 +1236,7 @@ const G={
   mode:'pvp',
   pendSk:null,
   pickTurn:1, // whose turn it is to pick (1 or 2)
+  aiPicking:false, // true while AI draft animation is running
 
   goTitle(){
     this.showS('title-screen');
@@ -1248,7 +1255,7 @@ const G={
 
   goSelectMode(m){
     this.mode=m;
-    this.t1=[];this.t2=[];this.pickTurn=1;
+    this.t1=[];this.t2=[];this.pickTurn=1;this.aiPicking=false;
     this.hideModeMenu();
     this.showS('select-screen');
     this.buildRoster();
@@ -1284,50 +1291,117 @@ const G={
   updPickTurnUI(){
     const ind=document.getElementById('pick-turn-indicator');
     const title=document.getElementById('sel-screen-title');
-    const total=this.t1.length+this.t2.length;
-    const maxPicks=this.mode==='pve'?4:8;
-    if(total>=maxPicks){
-      if(ind)ind.textContent='✅ ALL PICKS DONE';
-      if(ind)ind.style.background='rgba(57,255,136,.15)';
-      if(ind)ind.style.color='var(--grn)';
-      if(ind)ind.style.borderColor='rgba(57,255,136,.3)';
+    const t1done=this.t1.length, t2done=this.t2.length;
+    const maxPicks=8; // always 4v4 total picks shown
+    const total=t1done+t2done;
+    if(t1done>=4&&t2done>=4){
+      if(ind){ind.classList.remove('ai-thinking');ind.textContent='✅ ALL PICKS DONE — READY!';ind.style.background='rgba(57,255,136,.15)';ind.style.color='var(--grn)';ind.style.borderColor='rgba(57,255,136,.3)'}
+      if(title)title.textContent='CHARACTER SELECT — READY';
+    } else if(this.aiPicking){
+      if(ind){ind.textContent='🤖 AI IS PICKING...';ind.style.background='rgba(176,106,255,.15)';ind.style.color='var(--pur)';ind.style.borderColor='rgba(176,106,255,.3)';ind.classList.add('ai-thinking')}
+      if(title)title.textContent='CHARACTER SELECT — AI THINKING';
     } else if(this.pickTurn===1){
-      if(ind){ind.textContent='⚡ TEAM 1 — YOUR PICK';ind.style.background='var(--c1d)';ind.style.color='var(--c1)';ind.style.borderColor='rgba(0,212,255,.3)'}
-      if(title)title.textContent=this.mode==='pve'?'PICK YOUR TEAM':'CHARACTER SELECT — TEAM 1';
+      if(ind){ind.classList.remove('ai-thinking');ind.textContent=`⚡ YOUR PICK  (${t1done}/4)`;ind.style.background='var(--c1d)';ind.style.color='var(--c1)';ind.style.borderColor='rgba(0,212,255,.3)'}
+      if(title)title.textContent=this.mode==='pve'?'DRAFT — YOUR TURN':'CHARACTER SELECT — TEAM 1';
     } else {
-      if(ind){ind.textContent='🔥 TEAM 2 — YOUR PICK';ind.style.background='var(--c2d)';ind.style.color='var(--c2)';ind.style.borderColor='rgba(255,85,0,.3)'}
+      if(ind){ind.classList.remove('ai-thinking');ind.textContent=`🔥 TEAM 2 PICKS  (${t2done}/4)`;ind.style.background='var(--c2d)';ind.style.color='var(--c2)';ind.style.borderColor='rgba(255,85,0,.3)'}
       if(title)title.textContent='CHARACTER SELECT — TEAM 2';
+    }
+    // Dim/lock the roster cards during AI turn or when it's not your turn in PVP
+    const grid=document.getElementById('char-grid');
+    if(grid){
+      const locked=this.aiPicking||(this.mode==='pvp'&&this.pickTurn===2&&this.t2.length<4);
+      grid.style.pointerEvents=locked?'none':'';
+      grid.style.opacity=locked?'0.45':'1';
     }
   },
 
+  // AI picks a random unchosen character for Team 2 with a visible delay
+  aiDraftPick(){
+    if(this.t2.length>=4)return;
+    this.aiPicking=true;
+    this.updPickTurnUI();
+    // Dramatic pause — AI "thinking"
+    const thinkTime=900+Math.random()*700;
+    setTimeout(()=>{
+      const taken=new Set([...this.t1,...this.t2]);
+      const available=Object.keys(CHARS).filter(id=>!taken.has(id));
+      if(!available.length){this.aiPicking=false;this.updPickTurnUI();return;}
+      // AI picks randomly from available (slightly biased toward higher JJK ranks)
+      const ranked=available.sort((a,b)=>{
+        const rankOrder={'特級':0,'準特1級':1,'1級':2,'2級':3,'3級':4};
+        const ra=rankOrder[CHARS[a].jjkRank]||5, rb=rankOrder[CHARS[b].jjkRank]||5;
+        return ra-rb;
+      });
+      // 60% chance to pick from top half, 40% random
+      const pool=Math.random()<0.6?ranked.slice(0,Math.ceil(ranked.length/2)):ranked;
+      const chosen=pool[Math.floor(Math.random()*pool.length)];
+      this.t2.push(chosen);
+      // Flash the chosen card
+      const card=document.querySelector(`.char-card[data-id="${chosen}"]`);
+      if(card){
+        card.classList.add('sel-t2');
+        card.style.transform='scale(1.08)';
+        card.style.transition='transform 0.3s';
+        setTimeout(()=>{card.style.transform='';card.style.transition='';},400);
+      }
+      this.aiPicking=false;
+      this.updSlots();
+      this.updBtn();
+      // After AI picks, it's player's turn again (unless both teams are full)
+      if(this.t1.length<4){
+        this.pickTurn=1;
+      }
+      this.updPickTurnUI();
+    }, thinkTime);
+  },
+
   pick(id,card){
+    // Ignore clicks during AI turn
+    if(this.aiPicking)return;
+
     const in1=this.t1.includes(id),in2=this.t2.includes(id);
-    // clicking already-picked char removes it and resets turn if needed
+
+    // Clicking an already-picked card deselects it
     if(in1){
+      // Only allow un-picking T1 if it's player's turn and no AI is pending
       this.t1=this.t1.filter(x=>x!==id);
       card.classList.remove('sel-t1');
-      // If we had already advanced to T2's turn and T1 un-picks, recalculate turn
       this.pickTurn=this.calcPickTurn();
       this.updSlots();this.updPickTurnUI();this.updBtn();
       return;
     }
-    if(in2){
+    if(in2&&this.mode==='pvp'){
       this.t2=this.t2.filter(x=>x!==id);
       card.classList.remove('sel-t2');
       this.pickTurn=this.calcPickTurn();
       this.updSlots();this.updPickTurnUI();this.updBtn();
       return;
     }
-    // PVE: only T1 picks manually (T2 is AI filled on start)
+
+    // PVE: alternating player→AI draft
     if(this.mode==='pve'){
-      if(this.t1.length<4){this.t1.push(id);card.classList.add('sel-t1');}
-      this.updSlots();this.updPickTurnUI();this.updBtn();
+      if(this.t1.length<4&&this.pickTurn===1){
+        this.t1.push(id);
+        card.classList.add('sel-t1');
+        this.updSlots();this.updBtn();
+        // If AI still has picks to make, trigger AI pick after player picks
+        if(this.t2.length<4){
+          this.pickTurn=2;
+          this.updPickTurnUI();
+          this.aiDraftPick();
+        } else {
+          this.pickTurn=1;
+          this.updPickTurnUI();
+        }
+      }
       return;
     }
+
     // PVP: alternating picks — each team picks 1 at a time
     if(this.pickTurn===1&&this.t1.length<4){
       this.t1.push(id);card.classList.add('sel-t1');
-      this.pickTurn=this.t1.length<4&&this.t2.length===this.t1.length-1?2:this.calcPickTurn();
+      this.pickTurn=this.calcPickTurn();
     } else if(this.pickTurn===2&&this.t2.length<4){
       this.t2.push(id);card.classList.add('sel-t2');
       this.pickTurn=this.calcPickTurn();
@@ -1336,11 +1410,10 @@ const G={
   },
 
   calcPickTurn(){
-    // Alternating: T1 picks, then T2, then T1, etc.
     const t1=this.t1.length, t2=this.t2.length;
     if(t1>=4&&t2>=4)return 0;
-    if(t1===t2)return 1; // T1 goes first when equal
-    if(t1>t2)return 2;   // T2 picks to catch up
+    if(t1===t2)return 1;
+    if(t1>t2)return 2;
     return 1;
   },
 
