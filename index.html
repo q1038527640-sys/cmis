@@ -646,6 +646,19 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .jjk-3級{background:linear-gradient(90deg,#2e8b57,#145a32);color:#fff}
 .f-jjk{font-size:9px;font-family:var(--fM);margin-top:1px;opacity:.85}
 .actor-jjk{font-size:10px;font-family:var(--fM);letter-spacing:1px;margin-top:1px}
+
+/* ── PICK TURN & MODE MENU ── */
+#mode-menu{gap:10px}
+.char-card.sel-t1{border-color:rgba(0,212,255,.7);background:linear-gradient(180deg,rgba(0,212,255,.12),var(--bg3));box-shadow:0 0 12px rgba(0,212,255,.2)}
+.char-card.sel-t2{border-color:rgba(255,85,0,.7);background:linear-gradient(180deg,rgba(255,85,0,.12),var(--bg3));box-shadow:0 0 12px rgba(255,85,0,.2)}
+.char-card.sel-t1::before{opacity:1;background:var(--sr)}
+.char-card.sel-t2::before{opacity:1;background:var(--ssr)}
+/* JJK-rank driven borders on cards */
+.char-card[data-jjk="特級"]::before{background:linear-gradient(135deg,#8a2be2,#ff1493)}
+.char-card[data-jjk="準特1級"]::before{background:linear-gradient(135deg,#ff4500,#ff8c00)}
+.char-card[data-jjk="1級"]::before{background:linear-gradient(135deg,#dc143c,#8b0000)}
+.char-card[data-jjk="2級"]::before{background:linear-gradient(135deg,#1e90ff,#0050aa)}
+.char-card[data-jjk="3級"]::before{background:linear-gradient(135deg,#2e8b57,#145a32)}
 </style>
 </head>
 <body>
@@ -664,13 +677,20 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="stat-item"><div class="stat-num">4v4</div><div class="stat-lbl">Format</div></div>
     <div class="stat-item"><div class="stat-num">∞</div><div class="stat-lbl">Combos</div></div>
   </div>
-  <div class="title-btns">
-    <button class="btn-fire" onclick="G.goSelect()">⚔ START GAME</button>
-    <button class="btn-ice" onclick="G.quickMatch()">🎲 QUICK MATCH</button>
-    <button class="btn-ghost" onclick="G.goSelect()">← BACK</button>
+  <div class="title-btns" id="title-main-btns">
+    <button class="btn-fire" onclick="G.showModeMenu()">⚔ START GAME</button>
+    <button class="btn-ice" onclick="G.quickPVE()">⚡ QUICK PLAY</button>
+  </div>
+  <!-- Mode selection submenu -->
+  <div id="mode-menu" style="display:none;flex-direction:column;align-items:center;gap:12px;margin-top:0">
+    <div style="font-family:var(--fM);font-size:11px;letter-spacing:4px;color:var(--c1);opacity:.7;margin-bottom:4px">SELECT MODE</div>
+    <button class="btn-fire" onclick="G.goSelectMode('pvp')" style="width:220px;font-size:15px">👥 PVP — Player vs Player</button>
+    <button class="btn-ice" onclick="G.goSelectMode('pve')" style="width:220px;font-size:15px">🤖 PVE — Player vs AI</button>
+    <button class="btn-ghost" style="width:220px;font-size:15px;opacity:.5;cursor:not-allowed" disabled>📖 STORY MODE <span style="font-size:10px;opacity:.6">(WIP)</span></button>
+    <button class="btn-ghost" onclick="G.hideModeMenu()" style="width:220px;font-size:13px;margin-top:4px">✕ CANCEL</button>
   </div>
   <div class="title-tagline">
-    <span>14</span> <span>14</span> Fighters · <span>Authentic Skills</span> · Trigger Value <span>Ultimate</span> System<br>Shield System · Stamina System · <span>Headshot</span> / Dodge Mechanics
+    <span>14</span> Fighters · <span>Authentic Skills</span> · Trigger Value <span>Ultimate</span> System<br>Shield System · Stamina System · <span>Headshot</span> / Dodge Mechanics
   </div>
 </div>
 
@@ -679,12 +699,9 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
      ══════════════════════════════════════════ -->
 <div id="select-screen" class="screen">
   <div class="sel-header">
-    <div class="sel-title">CHARACTER SELECT</div>
-    <div class="mode-tabs">
-      <button class="mode-tab active" id="tab-pvp" onclick="G.setMode('pvp')">👥 PvP</button>
-      <button class="mode-tab" id="tab-pve" onclick="G.setMode('pve')">🤖 PvE</button>
-    </div>
-    <button class="btn-ghost" onclick="G.goTitle()">← BACK</button>
+    <div class="sel-title" id="sel-screen-title">CHARACTER SELECT</div>
+    <div id="pick-turn-indicator" style="font-family:var(--fM);font-size:12px;letter-spacing:3px;padding:5px 14px;border-radius:4px;background:var(--c1d);color:var(--c1);border:1px solid rgba(0,212,255,.3)">⚡ TEAM 1 PICKS</div>
+    <button class="btn-ghost" onclick="G.goTitle()">🏠 MAIN MENU</button>
   </div>
 
   <div class="sel-body">
@@ -707,7 +724,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <div class="roster-col">
       <div class="roster-header">
         <div class="roster-title">🏆 ROSTER</div>
-        <div class="roster-count" id="roster-info">Click to select · T1 first then T2</div>
+        <div class="roster-count" id="roster-info">Teams take turns picking · 1 pick each per round</div>
       </div>
       <div class="char-grid" id="char-grid"></div>
       <div class="sel-footer">
@@ -1212,31 +1229,119 @@ const G={
   t1:[],t2:[],
   mode:'pvp',
   pendSk:null,
+  pickTurn:1, // whose turn it is to pick (1 or 2)
 
-  goTitle(){this.showS('title-screen')},
-  goSelect(){this.showS('select-screen');this.buildRoster();this.updBtn()},
+  goTitle(){
+    this.showS('title-screen');
+    this.hideModeMenu();
+  },
+
+  showModeMenu(){
+    document.getElementById('title-main-btns').style.display='none';
+    document.getElementById('mode-menu').style.display='flex';
+  },
+
+  hideModeMenu(){
+    document.getElementById('title-main-btns').style.display='flex';
+    document.getElementById('mode-menu').style.display='none';
+  },
+
+  goSelectMode(m){
+    this.mode=m;
+    this.t1=[];this.t2=[];this.pickTurn=1;
+    this.hideModeMenu();
+    this.showS('select-screen');
+    this.buildRoster();
+    this.updPickTurnUI();
+    this.updBtn();
+  },
+
+  // Quick PVE: random team for player, random AI team, jump straight to battle
+  quickPVE(){
+    this.mode='pve';
+    const all=Object.keys(CHARS).sort(()=>Math.random()-.5);
+    this.t1=all.slice(0,4);
+    this.t2=all.slice(4,8);
+    this.eng=new Engine();
+    const st=this.eng.setup(this.t1,this.t2);
+    this.showS('battle-screen');
+    this.render(st);
+  },
+
   showS(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active')},
 
   buildRoster(){
     const g=document.getElementById('char-grid');g.innerHTML='';
     Object.values(CHARS).forEach(ch=>{
       const d=document.createElement('div');
-      d.className=`char-card rarity-${ch.rarity}`;d.dataset.id=ch.id;
-      d.innerHTML=`<span class="c-emo">${ch.emoji}</span><div class="c-name">${ch.name}</div><span class="c-rarity">${ch.rarity}</span><span class="jjk-rank jjk-${ch.jjkRank||'3'}<span class="c-role">${ch.role}</span>`;
+      d.className=`char-card`;d.dataset.id=ch.id;d.dataset.jjk=ch.jjkRank;
+      d.innerHTML=`<span class="c-emo">${ch.emoji}</span><div class="c-name">${ch.name}</div><span class="jjk-rank jjk-${ch.jjkRank}">${ch.jjkRank}</span><span class="c-role">${ch.role}</span>`;
       d.addEventListener('click',()=>this.pick(ch.id,d));
       g.appendChild(d);
     });
   },
 
+  updPickTurnUI(){
+    const ind=document.getElementById('pick-turn-indicator');
+    const title=document.getElementById('sel-screen-title');
+    const total=this.t1.length+this.t2.length;
+    const maxPicks=this.mode==='pve'?4:8;
+    if(total>=maxPicks){
+      if(ind)ind.textContent='✅ ALL PICKS DONE';
+      if(ind)ind.style.background='rgba(57,255,136,.15)';
+      if(ind)ind.style.color='var(--grn)';
+      if(ind)ind.style.borderColor='rgba(57,255,136,.3)';
+    } else if(this.pickTurn===1){
+      if(ind){ind.textContent='⚡ TEAM 1 — YOUR PICK';ind.style.background='var(--c1d)';ind.style.color='var(--c1)';ind.style.borderColor='rgba(0,212,255,.3)'}
+      if(title)title.textContent=this.mode==='pve'?'PICK YOUR TEAM':'CHARACTER SELECT — TEAM 1';
+    } else {
+      if(ind){ind.textContent='🔥 TEAM 2 — YOUR PICK';ind.style.background='var(--c2d)';ind.style.color='var(--c2)';ind.style.borderColor='rgba(255,85,0,.3)'}
+      if(title)title.textContent='CHARACTER SELECT — TEAM 2';
+    }
+  },
+
   pick(id,card){
     const in1=this.t1.includes(id),in2=this.t2.includes(id);
-    if(in1){this.t1=this.t1.filter(x=>x!==id);card.classList.remove('sel-t1')}
-    else if(in2){this.t2=this.t2.filter(x=>x!==id);card.classList.remove('sel-t2')}
-    else if(this.mode==='pvp'){
-      if(this.t1.length<4){this.t1.push(id);card.classList.add('sel-t1')}
-      else if(this.t2.length<4){this.t2.push(id);card.classList.add('sel-t2')}
-    }else{if(this.t1.length<4){this.t1.push(id);card.classList.add('sel-t1')}}
-    this.updSlots();this.updBtn();
+    // clicking already-picked char removes it and resets turn if needed
+    if(in1){
+      this.t1=this.t1.filter(x=>x!==id);
+      card.classList.remove('sel-t1');
+      // If we had already advanced to T2's turn and T1 un-picks, recalculate turn
+      this.pickTurn=this.calcPickTurn();
+      this.updSlots();this.updPickTurnUI();this.updBtn();
+      return;
+    }
+    if(in2){
+      this.t2=this.t2.filter(x=>x!==id);
+      card.classList.remove('sel-t2');
+      this.pickTurn=this.calcPickTurn();
+      this.updSlots();this.updPickTurnUI();this.updBtn();
+      return;
+    }
+    // PVE: only T1 picks manually (T2 is AI filled on start)
+    if(this.mode==='pve'){
+      if(this.t1.length<4){this.t1.push(id);card.classList.add('sel-t1');}
+      this.updSlots();this.updPickTurnUI();this.updBtn();
+      return;
+    }
+    // PVP: alternating picks — each team picks 1 at a time
+    if(this.pickTurn===1&&this.t1.length<4){
+      this.t1.push(id);card.classList.add('sel-t1');
+      this.pickTurn=this.t1.length<4&&this.t2.length===this.t1.length-1?2:this.calcPickTurn();
+    } else if(this.pickTurn===2&&this.t2.length<4){
+      this.t2.push(id);card.classList.add('sel-t2');
+      this.pickTurn=this.calcPickTurn();
+    }
+    this.updSlots();this.updPickTurnUI();this.updBtn();
+  },
+
+  calcPickTurn(){
+    // Alternating: T1 picks, then T2, then T1, etc.
+    const t1=this.t1.length, t2=this.t2.length;
+    if(t1>=4&&t2>=4)return 0;
+    if(t1===t2)return 1; // T1 goes first when equal
+    if(t1>t2)return 2;   // T2 picks to catch up
+    return 1;
   },
 
   updSlots(){
@@ -1249,7 +1354,7 @@ const G={
           const ch=CHARS[cid];const cls=ti===0?'filled-t1':'filled-t2';
           sl.className=`sel-slot filled ${cls}`;
           sl.style.flexDirection=ti===1?'row-reverse':'row';
-          sl.innerHTML=`<span class="slot-emo">${ch.emoji}</span><div class="slot-info"><div class="slot-name">${ch.name}</div><div class="slot-meta">${ch.rarity} · <span class='jjk-rank jjk-${ch.jjkRank}'>${ch.jjkRank}</span> · ${ch.role}</div></div><button class="slot-x" onclick="G.rmv(${ti+1},'${cid}')">✕</button>`;
+          sl.innerHTML=`<span class="slot-emo">${ch.emoji}</span><div class="slot-info"><div class="slot-name">${ch.name}</div><div class="slot-meta"><span class='jjk-rank jjk-${ch.jjkRank}'>${ch.jjkRank}</span> · ${ch.role}</div></div><button class="slot-x" onclick="G.rmv(${ti+1},'${cid}')">✕</button>`;
         }else{
           sl.className='sel-slot';sl.style.flexDirection=ti===1?'row-reverse':'row';
           sl.innerHTML=`<span style="color:var(--txt3);font-size:11px;letter-spacing:2px">SLOT ${i+1}</span>`;
@@ -1270,22 +1375,14 @@ const G={
 
   updBtn(){
     const btn=document.getElementById('start-btn');if(!btn)return;
-    const rdy=this.t1.length===4&&this.t2.length===4;
+    const rdy=this.mode==='pve'?this.t1.length===4:(this.t1.length===4&&this.t2.length===4);
+    const total=this.t1.length+(this.mode==='pve'?0:this.t2.length);
+    const needed=this.mode==='pve'?4:8;
     btn.disabled=!rdy;
-    btn.textContent=rdy?'⚔ START BATTLE!':`SELECT FIGHTERS (${this.t1.length+this.t2.length}/8)`;
+    btn.textContent=rdy?'⚔ FIGHT!':`PICK FIGHTERS (${total}/${needed})`;
   },
 
-  setMode(m){
-    this.mode=m;
-    document.querySelectorAll('.mode-tab').forEach(b=>b.classList.remove('active'));
-    document.getElementById(`tab-${m}`).classList.add('active');
-  },
-
-  quickMatch(){
-    const all=Object.keys(CHARS).sort(()=>Math.random()-.5);
-    this.t1=all.slice(0,4);this.t2=all.slice(4,8);
-    this.goSelect();
-  },
+  setMode(m){this.mode=m},
 
   startBattle(){
     let t2=this.t2;
@@ -1473,14 +1570,14 @@ const G={
   },
 
   restart(){
-    this.eng=new Engine();this.t1=[];this.t2=[];this.pendSk=null;this.mode='pvp';
-    this.goSelect();
+    this.eng=new Engine();this.t1=[];this.t2=[];this.pendSk=null;this.pickTurn=1;
+    this.goTitle();
   },
-  goTitle2(){this.eng=new Engine();this.t1=[];this.t2=[];this.goTitle()}
+  goTitle2(){this.eng=new Engine();this.t1=[];this.t2=[];this.pickTurn=1;this.goTitle()}
 };
 
 document.addEventListener('DOMContentLoaded',()=>{
-  G.buildRoster();G.updBtn();
+  // Pre-build roster so it's ready when select screen opens
 });
 </script>
 </body>
