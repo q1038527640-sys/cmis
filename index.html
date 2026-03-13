@@ -539,6 +539,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   background:var(--bg2);border:1px solid var(--rim);
   border-radius:4px;padding:12px;
   display:flex;flex-direction:column;gap:8px;overflow:hidden;
+  min-height:320px;max-height:480px;
 }
 .log-title{
   font-family:var(--fT);font-size:12px;letter-spacing:4px;color:var(--txt2);
@@ -546,7 +547,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   display:flex;align-items:center;gap:6px;
 }
 .log-title::before{content:'▌';color:var(--c1)}
-.log-feed{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:2px}
+.log-feed{overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:1px;scroll-behavior:smooth}
 .log-entry{
   font-family:var(--fM);font-size:11px;line-height:1.5;
   padding:3px 7px;border-radius:2px;border-left:2px solid transparent;
@@ -569,6 +570,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .log-entry.warning{border-left-color:var(--gold);color:var(--gold)}
 .log-entry.info{color:var(--txt2)}
 .log-entry.return{border-left-color:var(--grn);color:var(--grn)}
+.log-entry.turnhead{
+  color:var(--txt);font-size:11px;letter-spacing:.5px;
+  padding:5px 7px 3px;margin-top:2px;
+  background:rgba(255,255,255,.03);
+  border-left:2px solid var(--rim2);
+  border-radius:2px;
+}
 
 /* ══════════════════════════════════════════
    GAMEOVER SCREEN
@@ -687,6 +695,21 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* ── QOL: HUD alive counter ── */
 #hud-t1,#hud-t2{font-family:var(--fM);font-size:13px;letter-spacing:1px}
+
+/* ── LOG SEPARATOR ── */
+.log-sep{
+  display:flex;align-items:center;gap:6px;margin:6px 0 2px;
+  font-family:var(--fM);font-size:9px;letter-spacing:3px;
+  color:var(--txt3);text-transform:uppercase;
+}
+.log-sep::before,.log-sep::after{content:'';flex:1;height:1px;background:var(--rim)}
+.log-sep span{white-space:nowrap;padding:0 4px}
+
+/* ── LOG ENTRY — bolder action lines ── */
+.log-entry.action{font-weight:600;font-size:12px;color:#ffaa77;padding-top:4px}
+.log-entry.ultimate{font-weight:700;font-size:12px;letter-spacing:.5px}
+.log-entry.death{font-size:12px;font-weight:700;background:rgba(255,51,68,.08);padding:4px 7px;border-radius:3px}
+.log-entry.system{font-weight:600}
 </style>
 </head>
 <body>
@@ -1112,7 +1135,11 @@ class Engine{
     this.t1=t1ids.map(id=>this.mkChar(CHARS[id],1));
     this.t2=t2ids.map(id=>this.mkChar(CHARS[id],2));
     this.state='BATTLE';this.cTeam=1;this.cIdx=0;this.round=1;this.log=[];
-    this.addLog('⚔️ Battle Start!','system');
+    this.addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','system');
+    this.addLog('⚔️  BATTLE START — ROUND 1','system');
+    this.addLog(`Team 1: ${t1ids.map(id=>CHARS[id].name).join(', ')}`,'info');
+    this.addLog(`Team 2: ${t2ids.map(id=>CHARS[id].name).join(', ')}`,'info');
+    this.addLog('━━━━━━━━━━━━━━━━━━━━━━━━━━━','system');
     return this.snap();
   }
   snap(){return{t1:this.t1,t2:this.t2,cTeam:this.cTeam,cChar:this.getCur(),round:this.round,log:this.log,state:this.state,winner:this.winner()}}
@@ -1123,7 +1150,13 @@ class Engine{
   act(atype,skey,tids){
     const actor=this.getCur();
     if(!actor||!actor.alive){this.next();return this.snap()}
-    if(atype==='pass'||actor.stunned){this.addLog(`😵 ${actor.name} is stunned! Turn skipped!`,'stun');this.next();return this.snap()}
+    if(atype==='pass'||actor.stunned){
+      this.addLog(`━━ ${actor.name} [T${actor.teamId}] is STUNNED — turn skipped ━━`,'stun');
+      this.next();return this.snap()
+    }
+    // Log turn header
+    const teamLabel=actor.teamId===1?'TEAM 1':'TEAM 2';
+    this.addLog(`${actor.emoji} ${actor.name} (${teamLabel}) — ${actor.hp}/${actor.maxHp} HP  ⚡${actor.stamina}sp  💥${actor.tv}/10tv`,'turnhead');
     const enemies=this.enemies(),allies=this.allies().filter(c=>c.id!==actor.id);
     const allC=this.all();
     let fx=[];
@@ -1136,24 +1169,24 @@ class Engine{
       if(actor.tv>=10)this.addLog(`💥 ${actor.name} trigger value full! ULTIMATE READY!`,'system');
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length&&enemies.length)tgts.push(enemies[0]);
-      this.addLog(`🔥 ${actor.name} uses ${sk.name}!`,'action');
+      this.addLog(`🔥 ${actor.name} uses ${sk.name}  [${sk.type?.toUpperCase()||'SKILL'} · costs ${sk.cost}⚡]`,'action');
       try{fx=sk.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Skill error:',e);fx=[]}
     }else if(atype==='ultimate'){
       if(actor.tv<10){this.addLog(`⚠️ Trigger value insufficient (${actor.tv}/10)!`,'warning');return this.snap()}
       actor.tv=0;
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length)tgts.push(...enemies);
-      this.addLog(`💥 ${actor.name} ULTIMATE: ${actor.skills.ultimate.name}!`,'ultimate');
+      this.addLog(`━━ 💥 ${actor.name.toUpperCase()} UNLEASHES ULTIMATE: ${actor.skills.ultimate.name.toUpperCase()} ━━`,'ultimate');
       try{fx=actor.skills.ultimate.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Ultimate error:',e);fx=[]}
     }else if(atype==='reminisce'){
       if(actor.remUsed){this.addLog('⚠️ Reminisce already used!','warning');return this.snap()}
       actor.remUsed=true;
-      this.addLog(`💫 ${actor.name} Reminisce: ${actor.reminisce?.name}!`,'reminisce');
+      this.addLog(`✨ ${actor.name} activates REMINISCE: ${actor.reminisce?.name}!`,'reminisce');
       try{fx=actor.reminisce?.exec(actor,this.cTeam===1?this.t1:this.t2,this.cTeam===1?this.t2:this.t1)||[]}catch(e){console.error('Reminisce error:',e);fx=[]}
     }
     this.applyFx(fx);
     const w=this.winner();
-    if(w){this.state='GAMEOVER';this.addLog(`🏆 Team ${w} wins!`,'system');return this.snap()}
+    if(w){this.state='GAMEOVER';this.addLog(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`,'system');this.addLog(`🏆 TEAM ${w} WINS THE BATTLE!`,'system');return this.snap()}
     if(atype!=='reminisce')this.next();
     return this.snap();
   }
@@ -1173,17 +1206,17 @@ class Engine{
           if(loc==='dodge'){this.addLog(`💨 ${t.name} dodges!`,'dodge');break}
           if(t.shield>0){const ab=Math.min(t.shield,Math.floor(dmg*.5));t.shield-=ab;dmg-=ab}
           t.hp=Math.max(0,t.hp-dmg);
-          this.addLog(`💢 ${t.name} -${dmg}${loc==='head'?' 💥HEADSHOT':''}! HP: ${t.hp}`,'damage');
+          this.addLog(`💢 ${t.name} takes ${dmg} damage${loc==='head'?' 💥 HEADSHOT':''}  →  ${t.hp}/${t.maxHp} HP`,'damage');
           if(t.hp<=0)this.kill(t);break}
-        case'truedamage':if(!t)break;t.hp=Math.max(0,t.hp-(f.amount||0));this.addLog(`☠️ ${t.name} true dmg -${f.amount}! HP: ${t.hp}`,'truedamage');if(t.hp<=0)this.kill(t);break;
-        case'heal':{if(!t)break;const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+(f.amount||0));if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name} heals ${f.amount}, overflow ${ov} → shield!`,'heal')}else this.addLog(`💚 ${t.name} heals ${f.amount} (${t.hp}/${t.maxHp})`,'heal');break}
-        case'shield':if(!t)break;t.shield=(t.shield||0)+(f.amount||0);this.addLog(`🛡️ ${t.name} +${f.amount} shield!`,'shield');break;
-        case'stun':if(!t)break;t.stunned=true;t.stunDur=(f.dur||f.duration||1);break;
-        case'buff':if(!t)break;{const bv=(f.val!==undefined?f.val:f.value)||0;const bd=(f.dur||f.duration||1);t.buffs.push({stat:f.stat,value:bv,duration:bd});// Harrison guarantee passive: any buff on same-team ally also copies to Harrison
+        case'truedamage':if(!t)break;t.hp=Math.max(0,t.hp-(f.amount||0));this.addLog(`⚡ ${t.name} takes ${f.amount||0} TRUE damage  →  ${t.hp}/${t.maxHp} HP`,'truedamage');if(t.hp<=0)this.kill(t);break;
+        case'heal':{if(!t)break;const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+(f.amount||0));if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name} heals ${f.amount} HP  →  FULL + ${ov} overflow → shield (🛡${t.shield} total)`,'heal')}else this.addLog(`💚 ${t.name} heals ${f.amount} HP  →  ${t.hp}/${t.maxHp} HP`,'heal');break}
+        case'shield':if(!t)break;t.shield=(t.shield||0)+(f.amount||0);this.addLog(`🛡 ${t.name} gains ${f.amount} shield  →  🛡${t.shield} total`,'shield');break;
+        case'stun':if(!t)break;t.stunned=true;t.stunDur=(f.dur||f.duration||1);this.addLog(`😵 ${t.name} is STUNNED for ${t.stunDur} turn(s)!`,'stun');break;
+        case'buff':if(!t)break;{const bv=(f.val!==undefined?f.val:f.value)||0;const bd=(f.dur||f.duration||1);t.buffs.push({stat:f.stat,value:bv,duration:bd});if(!f.text)this.addLog(`⬆ ${t.name} +${(bv*100).toFixed(0)}% ${f.stat} for ${bd} turn(s)`,'info');// Harrison guarantee passive: any buff on same-team ally also copies to Harrison
 const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id==='harrison'&&c.alive&&c.id!==t.id);if(harrison&&CHARS.harrison.harrisonGuarantee){harrison.buffs.push({stat:f.stat,value:bv,duration:bd});this.addLog(`👟 Harrison Passive: copied ${f.stat} buff from ${t.name}!`,'info')}}break;
-        case'debuff':if(!t)break;t.debuffs.push({stat:f.stat,value:(f.val!==undefined?f.val:f.value)||0,duration:(f.dur||f.duration||1)});break;
+        case'debuff':if(!t)break;{const dv=(f.val!==undefined?f.val:f.value)||0;const dd=(f.dur||f.duration||1);t.debuffs.push({stat:f.stat,value:dv,duration:dd});if(!f.text)this.addLog(`⬇ ${t.name} ${f.stat} ${(dv*100).toFixed(0)}% for ${dd} turn(s)`,'info');}break;
         case'dot':if(!t)break;t.dots.push({amount:(f.amount||0),duration:(f.dur||f.duration||4)});break;
-        case'stamina':if(!t)break;t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));break;
+        case'stamina':if(!t)break;{const prev=t.stamina;t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));if(!f.text)this.addLog(`⚡ ${t.name} stamina +${f.amount} (${prev}→${t.stamina}/${t.maxStamina})`, 'info');}break;
         case'stealStamina':{const fr=all.find(c=>c.id===f.from),to=all.find(c=>c.id===f.to);if(fr&&to){const stolen=Math.min(fr.stamina,f.amount||1);fr.stamina-=stolen;to.stamina=Math.min(to.maxStamina,to.stamina+stolen)}break}
         case'mark':if(!t)break;t.marks=t.marks||{};t.marks[f.mtype]=Math.min(f.max||3,(t.marks[f.mtype]||0)+(f.stacks||1));break;
         case'cleanse':if(!t)break;t.debuffs=(t.debuffs||[]).slice(f.count||1);break;
@@ -1195,7 +1228,7 @@ const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id
     }
   }
   loc(){const r=Math.random();if(r<.10)return'head';if(r<.15)return'dodge';if(r<.575)return'upper';return'legs'}
-  kill(c){c.alive=false;c.hp=0;this.addLog(`💀 ${c.name} is defeated!`,'death')}
+  kill(c){c.alive=false;c.hp=0;this.addLog(`💀 ${c.name} has been ELIMINATED! [Team ${c.teamId}]`,'death')}
   next(){
     const team=this.cTeam===1?this.t1:this.t2;
     const actor=team[this.cIdx];
@@ -1220,7 +1253,7 @@ const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id
       this.cIdx++;
     }
     const na=(this.cTeam===1?this.t1:this.t2)[this.cIdx];
-    if(na&&na.stunned){na.stunDur--;if(na.stunDur<=0){na.stunned=false;this.addLog(`😤 ${na.name} recovers from stun!`,'info')}}
+    if(na&&na.stunned){na.stunDur--;if(na.stunDur<=0){na.stunned=false;this.addLog(`✅ ${na.name} recovers from stun and is ready to fight!`,'return')}}
   }
   tickFx(c){
     c.buffs=(c.buffs||[]).filter(b=>{b.duration--;return b.duration>0});
@@ -1230,12 +1263,12 @@ const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id
   tickDots(){
     [...this.t1,...this.t2].forEach(c=>{
       if(!c.alive)return;
-      c.dots=(c.dots||[]).filter(d=>{c.hp=Math.max(0,c.hp-d.amount);this.addLog(`☠️ ${c.name} DoT -${d.amount}!`,'dot');if(c.hp<=0)this.kill(c);d.duration--;return d.duration>0});
-      (c.curses||[]).forEach(cu=>{if(Math.random()<cu.skipChance){const td=Math.floor(c.maxHp*cu.trueDmgRatio);c.hp=Math.max(0,c.hp-td);this.addLog(`📖 ${c.name} curse true damage -${td}!`,'curse');if(c.hp<=0)this.kill(c)}});
+      c.dots=(c.dots||[]).filter(d=>{c.hp=Math.max(0,c.hp-d.amount);this.addLog(`☠️ ${c.name} takes ${d.amount} bleed damage  (${c.hp}/${c.maxHp} HP remaining  ${d.duration-1} turns left)`,'dot');if(c.hp<=0)this.kill(c);d.duration--;return d.duration>0});
+      (c.curses||[]).forEach(cu=>{if(Math.random()<cu.skipChance){const td=Math.floor(c.maxHp*cu.trueDmgRatio);c.hp=Math.max(0,c.hp-td);this.addLog(`📖 ${c.name} is cursed — ${td} true damage  (${c.hp}/${c.maxHp} HP)`,'curse');if(c.hp<=0)this.kill(c)}});
     });
   }
   winner(){const a=this.t1.some(c=>c.alive),b=this.t2.some(c=>c.alive);if(!a)return 2;if(!b)return 1;return null}
-  addLog(msg,type='info'){this.log.unshift({msg,type,r:this.round});if(this.log.length>100)this.log.pop()}
+  addLog(msg,type='info'){this.log.push({msg,type,r:this.round});if(this.log.length>200)this.log.shift()}
   aiAct(){
     const actor=this.getCur();if(!actor)return null;
     const en=this.enemies();if(!en.length)return null;
@@ -1614,13 +1647,42 @@ const G={
   },
 
   renderLog(entries){
-    const c=document.getElementById('log-feed');c.innerHTML='';
-    // Show last 35 entries, newest at bottom
-    entries.slice(-35).forEach(e=>{
-      const d=document.createElement('div');d.className=`log-entry ${e.type}`;
-      d.textContent=`R${e.r||'—'} ${e.msg}`;c.appendChild(d);
+    const c=document.getElementById('log-feed');
+    // Only re-render if new entries added (compare length)
+    const prev=parseInt(c.dataset.len||'0');
+    if(entries.length===prev&&c.children.length>0)return;
+    c.dataset.len=entries.length;
+    c.innerHTML='';
+    // Show last 60 entries, oldest at top, newest at bottom
+    const show=entries.slice(-60);
+    let lastRound=-1;
+    let lastTeam='';
+    show.forEach((e,i)=>{
+      // ── Round separator ──
+      if(e.r!==lastRound&&e.r>0){
+        const sep=document.createElement('div');
+        sep.className='log-sep';
+        sep.innerHTML=`<span>── ROUND ${e.r} ──</span>`;
+        c.appendChild(sep);
+        lastRound=e.r;
+        lastTeam='';
+      }
+      // ── Entry ──
+      const d=document.createElement('div');
+      d.className=`log-entry ${e.type||'info'}`;
+      // Format: icon prefix based on type for extra scannability
+      let prefix='';
+      if(e.type==='action')prefix='▶ ';
+      else if(e.type==='ultimate')prefix='💥 ';
+      else if(e.type==='reminisce')prefix='✨ ';
+      else if(e.type==='death')prefix='💀 ';
+      else if(e.type==='system')prefix='⚙ ';
+      else if(e.type==='stun')prefix='😵 ';
+      else if(e.type==='warning')prefix='⚠ ';
+      d.textContent=prefix+e.msg;
+      c.appendChild(d);
     });
-    // Auto-scroll to bottom
+    // Auto-scroll to bottom so latest is always visible
     requestAnimationFrame(()=>{c.scrollTop=c.scrollHeight});
   },
 
