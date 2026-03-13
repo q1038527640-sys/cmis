@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="zh">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>清迈国际格斗 Ver 2.4</title>
+<title>CMAC International Combat Ver 2.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════
@@ -632,6 +632,20 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   .battle-grid{grid-template-columns:1fr}
   .bottom-section{grid-template-columns:1fr}
 }
+
+/* ── JJK RANK BADGES ── */
+.jjk-rank{
+  display:inline-block;font-family:var(--fM);font-size:9px;letter-spacing:1px;
+  padding:1px 5px;border-radius:2px;margin-top:3px;font-weight:700;
+  text-transform:uppercase;
+}
+.jjk-特級{background:linear-gradient(90deg,#8a2be2,#ff1493);color:#fff;box-shadow:0 0 6px rgba(138,43,226,.6)}
+.jjk-準特1級{background:linear-gradient(90deg,#ff4500,#ff8c00);color:#fff;box-shadow:0 0 6px rgba(255,69,0,.5)}
+.jjk-1級{background:linear-gradient(90deg,#dc143c,#8b0000);color:#fff}
+.jjk-2級{background:linear-gradient(90deg,#1e90ff,#0050aa);color:#fff}
+.jjk-3級{background:linear-gradient(90deg,#2e8b57,#145a32);color:#fff}
+.f-jjk{font-size:9px;font-family:var(--fM);margin-top:1px;opacity:.85}
+.actor-jjk{font-size:10px;font-family:var(--fM);letter-spacing:1px;margin-top:1px}
 </style>
 </head>
 <body>
@@ -641,7 +655,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
      ══════════════════════════════════════════ -->
 <div id="title-screen" class="screen active">
   <div class="title-eyebrow">Official Server · Ver 2.4 · Chiangmai</div>
-  <div class="title-main">清迈国际格斗</div>
+  <div class="title-main">CMAC International Combat</div>
   <div class="title-sub">INTERNATIONAL COMBAT</div>
   <div class="title-ver">4v4 TACTICAL FIGHTING SYSTEM</div>
   <div class="title-divider"></div>
@@ -656,8 +670,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
     <button class="btn-ghost" onclick="G.goSelect()">← BACK</button>
   </div>
   <div class="title-tagline">
-    <span>14</span> 可选角色 · <span>真实技能</span>系统 · 触发值<span>大招</span>机制<br>
-    护盾系统 · 体力系统 · <span>爆头</span>/闪避判定
+    <span>14</span> <span>14</span> Fighters · <span>Authentic Skills</span> · Trigger Value <span>Ultimate</span> System<br>Shield System · Stamina System · <span>Headshot</span> / Dodge Mechanics
   </div>
 </div>
 
@@ -765,7 +778,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 <div id="gameover-screen" class="screen">
   <div class="winner-gg">VICTORY</div>
   <div class="winner-text w1" id="winner-txt">TEAM 1 WINS</div>
-  <div class="winner-sub" id="winner-sub">光荣的胜利</div>
+  <div class="winner-sub" id="winner-sub">A Glorious Victory</div>
   <div class="winner-divider"></div>
   <div class="winner-btns">
     <button class="btn-fire" onclick="G.restart()">⚔ REMATCH</button>
@@ -793,159 +806,241 @@ function calcDamage(user,target,mult,type){
   return Math.max(1,Math.floor(base));
 }
 
+// ── Harrison passive: guarantee buff from ALL ally skill effects ──
+// stored on Harrison's char as .harrisonGuarantee = true
+// handled in applyFx: if a buff targets ANY ally on Harrison's team, also copy it to Harrison
+
 const CHARS={
-  woojoo:{id:'woojoo',name:'Woojoo',rarity:'SSSR',gender:'male',role:'攻击/弱化',emoji:'🏀',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+  woojoo:{id:'woojoo',name:'Woojoo',rarity:'SSSR',gender:'male',role:'Offense / Debuff',emoji:'🏀',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'特級',jjkRankEn:'Special Grade',
     skills:{
-      skill1:{name:'篮球攻击',type:'magic',cost:1,tv:2,desc:'100%法术伤害',
-        exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1,'magic'),text:'🏀 篮球攻击！'}]}},
-      skill2:{name:'身高压制',type:'control',cost:2,tv:3,desc:'敌方无法行动一回合，攻击-15%',
-        exec(u,ts){const t=ts[0];return[{type:'damage',target:t.id,amount:calcDamage(u,t,.85,'magic'),text:'📏 身高压制！'},{type:'stun',target:t.id,dur:1},{type:'debuff',target:t.id,stat:'damage',val:-.15,dur:1}]}},
-      skill3:{name:'通灵术：灌篮',type:'magic',cost:4,tv:4,desc:'65%成功率250%伤害，失败自损10%',
-        exec(u,ts){const t=ts[0];if(Math.random()<.65){const m=Math.random()<.3?3.5:2.5;return[{type:'damage',target:t.id,amount:calcDamage(u,t,m,'magic'),text:'🔥 灌篮成功！'}]}return[{type:'damage',target:u.id,amount:Math.floor(u.maxHp*.1),text:'😭 灌篮失败！-10000aura'}]}},
-      ultimate:{name:'绿色杀手',desc:'连续三分，成功率递减',
-        exec(u,ts){const fx=[];for(let x=1;x<=3;x++){if(Math.random()<Math.pow(.7,x-1)){fx.push({type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.8,'magic'),text:`🏀 第${x}球！`})}else{fx.push({type:'text',text:`😬 第${x}球丢了`});break}}return fx}}
+      // cost rebalance: sk1=1, sk2=2, sk3=3
+      skill1:{name:'Basketball Strike',type:'magic',cost:1,tv:2,desc:'110% Magic Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],1.1,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🏀 Basketball Strike! → ${ts[0].name} takes ${dmg} magic damage`}]}},
+      skill2:{name:'Height Dominance',type:'control',cost:2,tv:3,desc:'85% dmg + Stun 1 turn + ATK -20%',
+        exec(u,ts){const t=ts[0];const dmg=calcDamage(u,t,.85,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`📏 Height Dominance! → ${t.name} takes ${dmg} damage`},{type:'stun',target:t.id,dur:1,text:`📏 ${t.name} is intimidated! Stunned 1 turn!`},{type:'debuff',target:t.id,stat:'damage',val:-.20,dur:2,text:`📏 ${t.name} ATK -20% for 2 turns`}]}},
+      skill3:{name:'Spirit Art: Slam Dunk',type:'magic',cost:3,tv:4,desc:'70% chance 280% magic, fail = self-damage 8%',
+        exec(u,ts){const t=ts[0];if(Math.random()<.70){const m=Math.random()<.35?3.8:2.8;const dmg=calcDamage(u,t,m,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`🔥 Spirit Slam Dunk! ${(m*100).toFixed(0)}% magic → ${t.name} takes ${dmg} damage!`}]}const sd=Math.floor(u.maxHp*.08);return[{type:'damage',target:u.id,amount:sd,text:`😭 Slam Dunk failed! Woojoo takes ${sd} self-damage, -10000 aura`}]}},
+      ultimate:{name:'Green Killer',desc:'Guaranteed 3-ball combo, 100% scaling +25% each shot',
+        exec(u,ts){const fx=[];let totalDmg=0;for(let x=1;x<=3;x++){const m=1.0+(x-1)*.25;const dmg=calcDamage(u,ts[0],m,'magic');totalDmg+=dmg;fx.push({type:'damage',target:ts[0].id,amount:dmg,text:`🏀 Green Killer Shot ${x}! ${(m*100).toFixed(0)}% magic → ${ts[0].name} takes ${dmg} damage`})}fx.push({type:'text',text:`🏀 Green Killer Combo End! Total damage: ${totalDmg}`});return fx}}
     },
-    reminisce:{name:'CMAC的绝杀',desc:'全队+30%攻击，恢复20%生命',exec(u,team){return team.map(m=>({type:'buff',target:m.id,stat:'damage',val:.3,dur:1,text:`💚 ${m.name} +30%！`})).concat(team.map(m=>({type:'heal',target:m.id,amount:Math.floor(m.maxHp*.2)})))}}
+    reminisce:{name:'CMAC Clutch Shot',desc:'Team +35% ATK, restore 25% HP',exec(u,team){return team.map(m=>({type:'buff',target:m.id,stat:'damage',val:.35,dur:2,text:`💚 ${m.name} gets CMAC boost! ATK +35% for 2 turns`})).concat(team.map(m=>({type:'heal',target:m.id,amount:Math.floor(m.maxHp*.25),text:`💚 ${m.name} heals ${Math.floor(m.maxHp*.25)} HP`})))}}
   },
-  jeff:{id:'jeff',name:'Jeff',rarity:'SSSR',gender:'male',role:'治疗',emoji:'🍬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  jeff:{id:'jeff',name:'Jeff',rarity:'SSSR',gender:'male',role:'Healer',emoji:'🍬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'準特1級',jjkRankEn:'Semi-Special Grade',
     skills:{
-      skill1:{name:'夹克连拳',type:'physical',cost:1,tv:2,desc:'80%体术伤害',
-        exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.8,'physical'),text:'🥊 夹克连拳！'}]}},
-      skill2:{name:'Dab Me Up',type:'heal',cost:2,tv:3,desc:'队友恢复20%生命',
-        exec(u,ts){const t=ts[0];return[{type:'heal',target:t.id,amount:Math.floor(t.maxHp*.2),text:'🤜 Dab Me Up！'}]}},
-      skill3:{name:'Where My Hug At',type:'heal',cost:4,tv:4,desc:'两位队友恢复50%生命',
-        exec(u,ts){return ts.slice(0,2).map(t=>({type:'heal',target:t.id,amount:Math.floor(t.maxHp*.5),text:`🤗 ${t.name}获得拥抱！`}))}},
-      ultimate:{name:'通灵术：四大天王',desc:'四位式神各造成110%伤害',
-        exec(u,ts){const fx=[];for(let i=0;i<4;i++){const t=ts[i%ts.length];fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,1.1,'magic'),text:`👊 天王第${i+1}击！`})}return fx}}
+      skill1:{name:'Jacket Combo',type:'physical',cost:1,tv:2,desc:'90% Physical Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],.9,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🥊 Jacket Combo! → ${ts[0].name} takes ${dmg} physical damage`}]}},
+      skill2:{name:'Dab Me Up',type:'heal',cost:2,tv:3,desc:'Ally heals 25% HP + 30% ATK buff',
+        exec(u,ts){const t=ts[0];const h=Math.floor(t.maxHp*.25);return[{type:'heal',target:t.id,amount:h,text:`🤜 Dab Me Up! → ${t.name} heals ${h} HP`},{type:'buff',target:t.id,stat:'damage',val:.30,dur:2,text:`🤜 ${t.name} ATK +30% for 2 turns!`}]}},
+      skill3:{name:'Where My Hug At',type:'heal',cost:3,tv:4,desc:'Full team heal 40% HP + 200 shield',
+        exec(u,ts,all,al){const targets=[u,...al];return targets.flatMap(t=>{const h=Math.floor(t.maxHp*.40);return[{type:'heal',target:t.id,amount:h,text:`🤗 ${t.name} gets a hug! Heals ${h} HP`},{type:'shield',target:t.id,amount:200,text:`🤗 ${t.name} gains 200 shield`}]})}},
+      ultimate:{name:'Spirit Art: Four Heavenly Kings',desc:'4 kings at 135% magic, last hit crits lowest HP target',
+        exec(u,ts){const fx=[];const names=['Azure Dragon','White Tiger','Vermilion Bird','Black Tortoise'];for(let i=0;i<4;i++){const t=i===3?[...ts].sort((a,b)=>a.hp-b.hp)[0]:ts[i%ts.length];const dmg=calcDamage(u,t,1.35,'magic');fx.push({type:'damage',target:t.id,amount:i===3?Math.floor(dmg*1.5):dmg,text:`👊 ${names[i]} Heavenly King Strike ${i+1}! → ${t.name} takes ${i===3?Math.floor(dmg*1.5):dmg} damage${i===3?' 💥CRIT!':''}`})}return fx}}
     },
-    reminisce:{name:'Chocolate Covered Skittles',desc:'全队+10%攻击，自身+30%法术',exec(u,team){const fx=team.filter(m=>m.id!==u.id).map(m=>({type:'buff',target:m.id,stat:'damage',val:.1,dur:1}));fx.push({type:'buff',target:u.id,stat:'magicDamage',val:.3,dur:1,text:'😎 墨镜！法术+30%！'});return fx}}
+    reminisce:{name:'Chocolate Covered Skittles',desc:'Team +15% ATK, self +40% magic, 2 turns',exec(u,team){const fx=team.filter(m=>m.id!==u.id).map(m=>({type:'buff',target:m.id,stat:'damage',val:.15,dur:2,text:`😎 ${m.name} gets candy boost! +15% ATK`}));fx.push({type:'buff',target:u.id,stat:'magicDamage',val:.40,dur:2,text:'😎 Jeff Sunglasses! Magic +40%, 2 turns!'});return fx}}
   },
-  jake:{id:'jake',name:'Jake',rarity:'SSR',gender:'male',role:'攻击',emoji:'🎯',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  jake:{id:'jake',name:'Jake',rarity:'SSR',gender:'male',role:'Offense',emoji:'🎯',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'1級',jjkRankEn:'Grade 1',
     skills:{
-      skill1:{name:'Psh Psh Psh',type:'physical',cost:1,tv:2,desc:'20%+35%+45%三连击',
-        exec(u,ts){return[.2,.35,.45].map((m,i)=>({type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],m,'physical'),text:['👊Psh!','💥Psh Psh!','🔥PSH!'][i]}))}},
-      skill2:{name:'I Am A Model',type:'buff',cost:2,tv:3,desc:'下回合攻击+30%',
-        exec(u,ts){return[{type:'buff',target:u.id,stat:'damage',val:.3,dur:1,text:'💅 I Am A Model! +30%！'}]}},
-      skill3:{name:'超远三分爆头',type:'magic',cost:3,tv:4,desc:'150%法术×1.5爆头',
-        exec(u,ts){const b=calcDamage(u,ts[0],1.5,'magic');return[{type:'damage',target:ts[0].id,amount:Math.floor(b*1.5),text:'🎯 爆头！×1.5！'}]}},
-      ultimate:{name:'丝滑连招+底角三分',desc:'3-4次三分全体45%+45%',
-        exec(u,ts){const fx=[];const shots=Math.random()<.5?4:3;for(let i=0;i<shots;i++)ts.forEach(t=>fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,.45,'physical')+calcDamage(u,t,.45,'magic'),text:`🏀 底角三分${i+1}！`}));return fx}}
+      skill1:{name:'Psh Psh Psh',type:'physical',cost:1,tv:2,desc:'Combo 25%+40%+55% = 120% total',
+        exec(u,ts){const t=ts[0];const hits=[.25,.40,.55];const fx=[];let total=0;hits.forEach((m,i)=>{const dmg=calcDamage(u,t,m,'physical');total+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:[`👊 Psh! → ${dmg}`,`💥 Psh Psh! → ${dmg}`,`🔥 PSH!!! → ${dmg}`][i]})});fx.push({type:'text',text:`👊 Triple hit! Total damage: ${total}`});return fx}},
+      skill2:{name:'I Am A Model',type:'buff',cost:1,tv:3,desc:'Self +40% ATK for 2 turns',
+        exec(u){return[{type:'buff',target:u.id,stat:'damage',val:.40,dur:2,text:'💅 I Am A Model! ATK +40%, 2 turns!'}]}},
+      skill3:{name:'Long-Range Headshot 3-Pointer',type:'magic',cost:2,tv:4,desc:'175% magic, guaranteed headshot ×1.5',
+        exec(u,ts){const t=ts[0];const base=calcDamage(u,t,1.75,'magic');const final=Math.floor(base*1.5);return[{type:'damage',target:t.id,amount:final,text:`🎯 Long-Range Headshot! 175%×1.5 → ${t.name} takes ${final} crit damage!`}]}},
+      ultimate:{name:'Silky Combo + Corner Three',desc:'4-5 shots, 70% physical + 70% magic each, guaranteed hit',
+        exec(u,ts){const fx=[];const shots=Math.random()<.5?5:4;let totalDmg=0;for(let i=0;i<shots;i++){ts.forEach(t=>{const pdmg=calcDamage(u,t,.70,'physical');const mdmg=calcDamage(u,t,.70,'magic');totalDmg+=pdmg+mdmg;fx.push({type:'damage',target:t.id,amount:pdmg+mdmg,text:`🏀 Corner Three Shot ${i+1}! → ${t.name} physical ${pdmg}+magic ${mdmg}=${pdmg+mdmg}`})})}fx.push({type:'text',text:`🏀 Silky Combo End! ${shots} shots! Total damage: ${totalDmg}`});return fx}}
     },
-    reminisce:{name:'丝滑后撤步',desc:'命中率+50%一回合',exec(u){return[{type:'buff',target:u.id,stat:'accuracy',val:.5,dur:1,text:'✨ 丝滑后撤步！命中+50%！'}]}}
+    reminisce:{name:'Silky Step-Back',desc:'2 turns guaranteed hit + ATK +40%',exec(u){return[{type:'buff',target:u.id,stat:'accuracy',val:1,dur:2,text:'✨ Silky Step-Back! Guaranteed hit 2 turns!'},{type:'buff',target:u.id,stat:'damage',val:.40,dur:2,text:'✨ ATK +40%!'}]}}
   },
-  zane:{id:'zane',name:'Zane',rarity:'SSR',gender:'male',role:'强化',emoji:'🔮',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  zane:{id:'zane',name:'Zane',rarity:'SSR',gender:'male',role:'Support',emoji:'🔮',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'特級',jjkRankEn:'Special Grade',
     skills:{
-      skill1:{name:'Psh Psh Psh',type:'physical',cost:1,tv:2,desc:'95%体术伤害',
-        exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.95,'physical'),text:'👊 Psh!'}]}},
-      skill2:{name:'Integrated Algebra 2',type:'buff',cost:2,tv:3,desc:'队友+20%伤害两回合，自身回血10%',
-        exec(u,ts,all,al){const fx=al.slice(0,1).map(t=>({type:'buff',target:t.id,stat:'damage',val:.2,dur:2,text:`📚 ${t.name} Algebra加成！`}));fx.push({type:'heal',target:u.id,amount:Math.floor(u.maxHp*.1)});return fx}},
-      skill3:{name:'通灵术随机',type:'mixed',cost:4,tv:4,desc:'召唤Lucas/Vincent/Harrison',
-        exec(u,ts){const r=Math.random();if(r<.33)return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1.5,'magic'),text:'💬 Ur MOM! 150%法术！'}];if(r<.66)return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1.5,'physical'),text:'🤗 公主抱！150%体术！'}];const shots=3+(Math.random()<.6?Math.floor(Math.random()*3):0);return Array(shots).fill(0).map((_,i)=>({type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.4,'magic'),text:`👟 Harrison鞋${i+1}！`}))}},
-      ultimate:{name:'通灵术：里香',desc:'随机两人200-500%法术',
-        exec(u,ts){return[...ts].sort(()=>Math.random()-.5).slice(0,2).map(t=>{const m=2+Math.random()*3;return{type:'damage',target:t.id,amount:calcDamage(u,t,m,'magic'),text:`🌸 里香：${(m*100).toFixed(0)}%！`}})}}
+      skill1:{name:'Psh Psh Psh',type:'physical',cost:1,tv:2,desc:'110% Physical Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],1.1,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Zane Psh! → ${ts[0].name} takes ${dmg} physical damage`}]}},
+      skill2:{name:'Integrated Algebra 2',type:'buff',cost:2,tv:3,desc:'Target ally +30% ATK 2 turns, self heal 15% + stamina +1',
+        exec(u,ts,all,al){const tgt=al[0];const h=Math.floor(u.maxHp*.15);const fx=[];if(tgt)fx.push({type:'buff',target:tgt.id,stat:'damage',val:.30,dur:2,text:`📚 ${tgt.name} gets Algebra buff! ATK +30%, 2 turns!`});fx.push({type:'heal',target:u.id,amount:h,text:`📚 Zane heals ${h} HP`});fx.push({type:'stamina',target:u.id,amount:1,text:'📚 Zane +1 stamina'});return fx}},
+      skill3:{name:'Spirit Art: Random Summon',type:'mixed',cost:3,tv:4,desc:'Random summon: Lucas curse / Vincent slam / Harrison shoe rain',
+        exec(u,ts){const t=ts[0];const r=Math.random();if(r<.33){const dmg=calcDamage(u,t,2.0,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`💬 Lucas Summon! "Ur MOM!" → ${t.name} takes ${dmg} magic damage`}]}if(r<.66){const dmg=calcDamage(u,t,2.0,'physical');return[{type:'damage',target:t.id,amount:dmg,text:`🤗 Vincent Summon! Princess Slam → ${t.name} takes ${dmg} physical damage`}]}const shots=4+Math.floor(Math.random()*3);const fx=[];let total=0;for(let i=0;i<shots;i++){const dmg=calcDamage(u,t,.5,'magic');total+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:`👟 Harrison Summon! Shoe ${i+1} → ${dmg}`})}fx.push({type:'text',text:`👟 Shoe Rain End! ${shots} shoes, total: ${total}`});return fx}},
+      ultimate:{name:'Spirit Art: Rika',desc:'All enemies 200-600% magic + soul curse 3 turns',
+        exec(u,ts){const fx=[];ts.forEach(t=>{const m=2.0+Math.random()*4.0;const dmg=calcDamage(u,t,m,'magic');fx.push({type:'damage',target:t.id,amount:dmg,text:`🌸 Rika appears! ${(m*100).toFixed(0)}% magic → ${t.name} takes ${dmg} damage!`});fx.push({type:'curse',target:t.id,skipChance:.5,trueDmgRatio:.10,dur:3,text:`🌸 ${t.name} cursed by Rika! 50% skip turn + 10% true dmg per turn for 3 turns`})});return fx}}
     },
-    reminisce:{name:'你说谁是ginger?',desc:'法术+30%两回合，生命+5%',exec(u){return[{type:'buff',target:u.id,stat:'magicDamage',val:.3,dur:2,text:'😤 法术+30%！'},{type:'heal',target:u.id,amount:Math.floor(u.maxHp*.05)}]}}
+    reminisce:{name:'Who You Calling Ginger?',desc:'Magic +50%, ATK +30%, 2 turns, heal 15%',exec(u){return[{type:'buff',target:u.id,stat:'magicDamage',val:.5,dur:2,text:'😤 I AM NOT A GINGER! Magic +50%, 2 turns!'},{type:'buff',target:u.id,stat:'damage',val:.30,dur:2,text:'😤 ATK +30%, 2 turns!'},{type:'heal',target:u.id,amount:Math.floor(u.maxHp*.15),text:`😤 Zane heals ${Math.floor(u.maxHp*.15)} HP`}]}}
   },
-  vincent:{id:'vincent',name:'Vincent',rarity:'SR',gender:'male',role:'攻击',emoji:'💪',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  vincent:{id:'vincent',name:'Vincent',rarity:'SR',gender:'male',role:'Offense',emoji:'💪',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'1級',jjkRankEn:'Grade 1',
     skills:{
-      skill1:{name:'出拳',type:'physical',cost:1,tv:2,desc:'100%体术伤害',exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1,'physical'),text:'👊 直拳！'}]}},
-      skill2:{name:'扫堂腿',type:'physical',cost:3,tv:3,desc:'165%体术伤害',exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1.65,'physical'),text:'🦵 扫堂腿！'}]}},
-      skill3:{name:'公主抱',type:'physical',cost:3,tv:4,desc:'150%体术，75%抱摔+30%',
-        exec(u,ts){const b=calcDamage(u,ts[0],1.5,'physical');if(Math.random()<.75)return[{type:'damage',target:ts[0].id,amount:Math.floor(b*1.3),text:'💃 公主抱摔！+30%！'}];return[{type:'damage',target:ts[0].id,amount:b,text:'🤲 公主抱！'}]}},
-      ultimate:{name:'领域展开：掰手腕',desc:'敌方90%概率输，120%法术',
-        exec(u,ts){return ts.map(t=>{const r=Math.random();if(r<.9025)return{type:'damage',target:t.id,amount:calcDamage(u,t,1.2,'magic'),text:`💪 ${t.name}掰手腕输了！`};if(r<.9975)return{type:'text',text:`😤 ${t.name}勉强赢了！`};return{type:'ko',target:u.id,text:'😱 Vincent抽筋暴毙！'}})}}
+      skill1:{name:'Straight Punch',type:'physical',cost:1,tv:2,desc:'120% Physical Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],1.2,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Vincent Straight Punch! → ${ts[0].name} takes ${dmg} physical damage`}]}},
+      skill2:{name:'Sweep Kick',type:'physical',cost:2,tv:3,desc:'180% physical + fall debuff -20% ATK',
+        exec(u,ts){const t=ts[0];const dmg=calcDamage(u,t,1.8,'physical');return[{type:'damage',target:t.id,amount:dmg,text:`🦵 Sweep Kick! → ${t.name} takes ${dmg} physical damage!`},{type:'debuff',target:t.id,stat:'damage',val:-.2,dur:1,text:`🦵 ${t.name} swept down! ATK -20% next turn`}]}},
+      skill3:{name:'Princess Carry',type:'physical',cost:3,tv:4,desc:'160% physical, 85% chance throw for +40% bonus',
+        exec(u,ts){const t=ts[0];const base=calcDamage(u,t,1.6,'physical');if(Math.random()<.85){const bonus=Math.floor(base*.40);const total=base+bonus;return[{type:'damage',target:t.id,amount:total,text:`💃 Princess Carry Slam! 160%+40% → ${t.name} takes ${total} damage!`}]}return[{type:'damage',target:t.id,amount:base,text:`🤲 Princess Carry! 160% → ${t.name} takes ${base} damage`}]}},
+      ultimate:{name:'Domain Expansion: Arm Wrestle',desc:'All enemies must arm wrestle, 95% win rate, win = 200% magic + stun',
+        exec(u,ts){const fx=[];ts.forEach(t=>{const r=Math.random();if(r<.95){const dmg=calcDamage(u,t,2.0,'magic');fx.push({type:'damage',target:t.id,amount:dmg,text:`💪 ${t.name} lost the arm wrestle! → takes ${dmg} damage!`});fx.push({type:'stun',target:t.id,dur:1,text:`💪 ${t.name} arm went limp! Stunned 1 turn!`})}else{fx.push({type:'text',text:`😤 ${t.name} miraculously wins! Vincent's ego is bruised!`})}});return fx}}
     },
-    reminisce:{name:'番茄的痛',desc:'下一技能必中，体术翻倍',exec(u){return[{type:'buff',target:u.id,stat:'physicalDamage',val:1,dur:1,text:'🍅 体术伤害翻倍！'}]}}
+    reminisce:{name:'Pain of the Tomato',desc:'Guaranteed hit, physical +120%, 2 turns',exec(u){return[{type:'buff',target:u.id,stat:'physicalDamage',val:1.2,dur:2,text:'🍅 Pain of the Tomato! Physical +120%, 2 turns!'}]}}
   },
-  lucas:{id:'lucas',name:'Lucas',rarity:'SSR',gender:'male',role:'攻击/弱化',emoji:'📊',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  lucas:{id:'lucas',name:'Lucas',rarity:'SSR',gender:'male',role:'Offense / Debuff',emoji:'📊',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'1級',jjkRankEn:'Grade 1',
     skills:{
-      skill1:{name:'考试99%',type:'magic',cost:1,tv:2,desc:'101%法术，+0.9 GPA',
-        exec(u,ts){u.gpa=(u.gpa||0)+.9;return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1.01,'magic'),text:`📝 考试99%！GPA:${u.gpa.toFixed(1)}`}]}},
-      skill2:{name:'AP Precal Pro Max',type:'buff',cost:2,tv:3,desc:'公式强化下一技能',
-        exec(u){const bonus=((u.hp/100)+(u.gpa||0)*5*(u.turnCount||1))*.1;return[{type:'buff',target:u.id,stat:'damage',val:bonus,dur:1,text:`📐 Precal加成！+${(bonus*100).toFixed(0)}%！`}]}},
-      skill3:{name:'打不打使命',type:'mixed',cost:3,tv:4,desc:'全体200%体术+持续法术',
-        exec(u,ts){const fx=[];ts.forEach(t=>{fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,2,'physical'),text:`🎮 ${t.name}使命惩罚！`});fx.push({type:'dot',target:t.id,amount:calcDamage(u,t,.5,'magic'),dur:4})});const st=ts[Math.floor(Math.random()*ts.length)];fx.push({type:'stun',target:st.id,dur:1,text:`😵 ${st.name}被眩晕！`});return fx}},
-      ultimate:{name:'领域展开：Arcaea',desc:'随机分数判定，按结果造成伤害',
-        exec(u,ts){return ts.map(t=>{const s=Math.random()*100*2221;let dmg=0,txt='';if(s<8900000){dmg=t.maxHp;txt='💀 TL秒杀！'}else if(s<9200000){dmg=Math.floor(t.hp*.75);txt='😱 75%伤害！'}else if(s<9500000){dmg=Math.floor(t.hp*.6);txt='😨 60%伤害！'}else if(s<9800000){dmg=Math.floor(t.hp*.4);txt='😰 40%伤害！'}else if(s<9900000){dmg=Math.floor(t.hp*.2);txt='😅 20%伤害！'}else if(s<10002221){dmg=Math.floor(t.hp*.1);txt='😌 10%伤害！'}else{txt='✅ 满分免伤！'}return dmg>0?{type:'damage',target:t.id,amount:dmg,text:`🎵 Arcaea(${Math.floor(s/10000)}): ${txt}`}:{type:'text',text:`🎵 ${t.name} ${txt}`}})}}
+      skill1:{name:'Exam Score 99%',type:'magic',cost:1,tv:2,desc:'110% magic damage, +0.9 GPA',
+        exec(u,ts){u.gpa=(u.gpa||0)+.9;const dmg=calcDamage(u,ts[0],1.1,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`📝 Exam 99%! → ${ts[0].name} takes ${dmg} magic damage | Lucas GPA: ${u.gpa.toFixed(1)}`}]}},
+      skill2:{name:'AP Precal Pro Max',type:'buff',cost:2,tv:3,desc:'ATK boost scaled by GPA × turn count formula',
+        exec(u){const bonus=Math.min(1.5,((u.hp/200)+(u.gpa||0)*3*(u.turnCount||1))*.08);return[{type:'buff',target:u.id,stat:'damage',val:bonus,dur:2,text:`📐 Precal boost! ATK +${(bonus*100).toFixed(0)}% (GPA:${(u.gpa||0).toFixed(1)} × turn ${u.turnCount||1}), 2 turns`}]}},
+      skill3:{name:'COD Punishment',type:'mixed',cost:3,tv:4,desc:'All 150% physical + DoT 50% magic ×3 turns + random stun',
+        exec(u,ts){const fx=[];ts.forEach(t=>{const dmg=calcDamage(u,t,1.5,'physical');fx.push({type:'damage',target:t.id,amount:dmg,text:`🎮 ${t.name} caught playing COD! 150% physical → ${dmg} damage`});fx.push({type:'dot',target:t.id,amount:calcDamage(u,t,.5,'magic'),dur:3,text:`🎮 ${t.name} COD punishment DoT! 3 turns`})});const st=ts[Math.floor(Math.random()*ts.length)];fx.push({type:'stun',target:st.id,dur:1,text:`😵 ${st.name} lost too hard! Stunned 1 turn`});return fx}},
+      // NERFED: Arcaea ult - no more insta-kill tier, max damage capped at 60% current HP, scores shifted harder to get
+      ultimate:{name:'Domain Expansion: Arcaea',desc:'[Nerfed] Score-based damage, max 60% current HP, no instakill',
+        exec(u,ts){return ts.map(t=>{const s=Math.random()*100*2221;let dmg=0,txt='';if(s<9000000){dmg=Math.floor(t.hp*.60);txt=`💀 EX(${Math.floor(s/10000)})! 60% current HP!`}else if(s<9400000){dmg=Math.floor(t.hp*.40);txt=`😱 AA+(${Math.floor(s/10000)})! 40% current HP!`}else if(s<9700000){dmg=Math.floor(t.hp*.25);txt=`😨 AA(${Math.floor(s/10000)})! 25% current HP!`}else if(s<9900000){dmg=Math.floor(t.hp*.15);txt=`😰 A(${Math.floor(s/10000)})! 15% current HP!`}else if(s<10001000){dmg=Math.floor(t.hp*.08);txt=`😅 B(${Math.floor(s/10000)})! 8% current HP!`}else{txt=`✅ PM(${Math.floor(s/10000)})! Perfect Memory! No damage!`}return dmg>0?{type:'truedamage',target:t.id,amount:dmg,text:`🎵 Arcaea Judgment → ${t.name}: ${txt} (${dmg} true dmg)`}:{type:'text',text:`🎵 Arcaea → ${t.name}: ${txt}`}})}}
     }
   },
-  harrison:{id:'harrison',name:'Harrison',rarity:'SSR',gender:'male',role:'强化/攻击',emoji:'👟',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  // ══ HARRISON — BUFFED ══
+  // sk2: steals 3% from ALL enemies (stacks onto Harrison only, enemies LOSE those stats)
+  // sk3: cost reduced to 3
+  // ult: combo rate increased 35%→65%, guaranteed stun
+  // passive: ALL ally buffs also copy onto Harrison
+  harrison:{id:'harrison',name:'Harrison',rarity:'SSR',gender:'male',role:'Support / Offense',emoji:'👟',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'準特1級',jjkRankEn:'Semi-Special Grade',
+    harrisonGuarantee:true,
     skills:{
-      skill1:{name:'大急拔跳投',type:'physical',cost:1,tv:2,desc:'90%命中110%体术',
-        exec(u,ts){if(Math.random()<.9)return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1.1,'physical'),text:'🏀 跳投命中！'}];return[{type:'text',text:'😬 偏了！'}]}},
-      skill2:{name:'数值窃取',type:'buff',cost:4,tv:3,desc:'窃取场上2%数值',
-        exec(u,ts,all){const stolen=all.reduce((s,t)=>s+t.maxHp*.02,0);return[{type:'heal',target:u.id,amount:Math.floor(stolen),text:`💰 窃取${Math.floor(stolen)}生命！`}]}},
-      skill3:{name:'万鞋登台',type:'special',cost:5,tv:4,desc:'全体10%真伤，眩晕一人',
-        exec(u,ts){const fx=ts.map(t=>({type:'truedamage',target:t.id,amount:Math.floor(t.hp*.1),text:`👟 ${t.name}被鞋砸！`}));fx.push({type:'stun',target:ts[Math.floor(Math.random()*ts.length)].id,dur:1});return fx}},
-      ultimate:{name:'钢铁血肘',desc:'眩晕+100%+35%连续170%',
-        exec(u,ts){const t=ts[0];const fx=[];if(Math.random()<.9)fx.push({type:'stun',target:t.id,dur:Math.random()<.4?2:1});fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,1,'physical'),text:'💪 钢铁血肘！'});if(Math.random()<.35)fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,1.7,'physical'),text:'🔥 Ga连续！170%！'});return fx}}
+      skill1:{name:'Quick Pull-Up Jumper',type:'physical',cost:1,tv:2,desc:'95% hit chance, 120% physical, on hit +1 stamina',
+        exec(u,ts){if(Math.random()<.95){const dmg=calcDamage(u,ts[0],1.2,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🏀 Quick Pull-Up Jumper! → ${ts[0].name} takes ${dmg} physical damage`},{type:'stamina',target:u.id,amount:1,text:'🏀 Hit! Harrison +1 stamina'}]}return[{type:'text',text:'😬 Jumper missed...'}]}},
+      skill2:{name:'Full-Court Stat Theft',type:'buff',cost:3,tv:3,desc:'Steal 3% ATK & HP from ALL enemies, all stacked onto Harrison only',
+        exec(u,ts,all){
+          const enemies=all.filter(c=>c.teamId!==u.teamId&&c.alive);
+          const fx=[];
+          let totalStolen=0;
+          let dmgStolen=0;
+          enemies.forEach(e=>{
+            const hpSteal=Math.floor(e.maxHp*.03);
+            const dmgSteal=0.03;
+            totalStolen+=hpSteal;
+            dmgStolen+=dmgSteal;
+            // Enemy loses 3% maxHp (as damage) and 3% damage stat
+            fx.push({type:'truedamage',target:e.id,amount:hpSteal,text:`💰 Stole ${hpSteal} HP from ${e.name} (-3% max HP)`});
+            fx.push({type:'debuff',target:e.id,stat:'damage',val:-dmgSteal,dur:999,text:`💰 ${e.name} ATK permanently -3% (stolen)`});
+          });
+          // Harrison gains all stolen stats stacked
+          fx.push({type:'heal',target:u.id,amount:totalStolen,text:`💰 Harrison absorbs ${totalStolen} HP (from ${enemies.length} enemies)`});
+          fx.push({type:'buff',target:u.id,stat:'damage',val:dmgStolen,dur:999,text:`💰 Harrison ATK permanently +${(dmgStolen*100).toFixed(0)}% (${enemies.length}×3% stolen stacked)`});
+          fx.push({type:'buff',target:u.id,stat:'physicalDamage',val:dmgStolen*.5,dur:999,text:`💰 Harrison physical permanently +${(dmgStolen*.5*100).toFixed(0)}% (theft bonus)`});
+          return fx;
+        }},
+      skill3:{name:'Shoe Parade',type:'special',cost:3,tv:4,desc:'All enemies 15% true damage, stun 2 targets',
+        exec(u,ts){const fx=ts.map(t=>{const td=Math.floor(t.hp*.15);return{type:'truedamage',target:t.id,amount:td,text:`👟 ${t.name} hit by shoe! 15% true damage → ${td}`}});const stunTargets=[...ts].sort(()=>Math.random()-.5).slice(0,Math.min(2,ts.length));stunTargets.forEach(t=>fx.push({type:'stun',target:t.id,dur:1,text:`👟 ${t.name} knocked out by shoe! Stunned 1 turn!`}));return fx}},
+      ultimate:{name:'Iron Blood Elbow',desc:'Guaranteed stun 1-2 turns + 150% physical, 65% chain for 220%',
+        exec(u,ts){const t=ts[0];const fx=[];const stunDur=Math.random()<.5?2:1;fx.push({type:'stun',target:t.id,dur:stunDur,text:`💪 Iron Elbow Stun! → ${t.name} stunned ${stunDur} turn(s)!`});const dmg1=calcDamage(u,t,1.5,'physical');fx.push({type:'damage',target:t.id,amount:dmg1,text:`💪 Iron Blood Elbow! → ${t.name} takes ${dmg1} physical damage`});if(Math.random()<.65){const dmg2=calcDamage(u,t,2.2,'physical');fx.push({type:'damage',target:t.id,amount:dmg2,text:`🔥 Chain trigger! 220% follow-up → ${t.name} takes another ${dmg2} damage!`});fx.push({type:'text',text:`🔥 Iron Elbow Double Hit! Total damage: ${dmg1+dmg2}`})}return fx}}
     },
-    reminisce:{name:'当初被绿的感受',desc:'伤害+70%，+3体力',exec(u){return[{type:'buff',target:u.id,stat:'damage',val:.7,dur:1,text:'💚 被绿加速！+70%！'},{type:'stamina',target:u.id,amount:3}]}}
+    reminisce:{name:'The Pain of Being Betrayed',desc:'ATK +80%, physical +50%, +4 stamina, 2 turns',exec(u){return[{type:'buff',target:u.id,stat:'damage',val:.80,dur:2,text:'💚 Betrayal Boost! ATK +80%, 2 turns!'},{type:'buff',target:u.id,stat:'physicalDamage',val:.50,dur:2,text:'💚 Physical +50%, 2 turns!'},{type:'stamina',target:u.id,amount:4,text:'💚 Harrison +4 stamina!'}]}}
   },
-  cici:{id:'cici',name:'Cici',rarity:'SR',gender:'female',role:'弱化',emoji:'🧠',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  cici:{id:'cici',name:'Cici',rarity:'SR',gender:'female',role:'Debuffer',emoji:'🧠',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'2級',jjkRankEn:'Grade 2',
     skills:{
-      skill1:{name:'反手拳',type:'physical',cost:1,tv:2,desc:'70%体术伤害',exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.7,'physical'),text:'👊 反手拳！'}]}},
-      skill2:{name:'一万IQ攻击',type:'control',cost:2,tv:3,desc:'眩晕一回合，夺一体力',exec(u,ts){return[{type:'stun',target:ts[0].id,dur:1,text:`🧠 一万IQ！眩晕！`},{type:'stealStamina',from:ts[0].id,to:u.id,amount:1}]}},
-      skill3:{name:'西西组合技',type:'physical',cost:4,tv:4,desc:'5次打击，全中眩晕',
-        exec(u,ts){const t=ts[0];const fx=[];for(let i=0;i<5;i++){const p=Math.random()<.6;fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,p?.35:.55,'physical'),text:p?'👊拳！':'🦵腿！'})}fx.push({type:'stun',target:t.id,dur:1,text:'💫 全命中眩晕！'});return fx}},
-      ultimate:{name:'式神：替身使者',desc:'三人联合攻击90%×3',
-        exec(u,ts){const t=ts[0];return[{type:'damage',target:t.id,amount:calcDamage(u,t,.9,'physical'),text:'👊 Cici！'},{type:'damage',target:t.id,amount:calcDamage(u,t,.9,'magic'),text:'✨ Feliz！'},{type:'damage',target:t.id,amount:calcDamage(u,t,.9,'magic'),text:'💬 LJ！'}]}}
+      skill1:{name:'Backhand Punch',type:'physical',cost:1,tv:2,desc:'80% Physical Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],.8,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Cici Backhand! → ${ts[0].name} takes ${dmg} physical damage`}]}},
+      skill2:{name:'10,000 IQ Strike',type:'control',cost:2,tv:3,desc:'Stun + steal 1 stamina + ATK -15%',
+        exec(u,ts){const t=ts[0];return[{type:'stun',target:t.id,dur:1,text:`🧠 10,000 IQ Strike! → ${t.name} stunned 1 turn!`},{type:'stealStamina',from:t.id,to:u.id,amount:1,text:`🧠 Cici steals 1 stamina from ${t.name}!`},{type:'debuff',target:t.id,stat:'damage',val:-.15,dur:2,text:`🧠 ${t.name} ATK -15%, 2 turns`}]}},
+      skill3:{name:'Cici Combo',type:'physical',cost:3,tv:4,desc:'7-hit combo, stun 2 turns on full hit',
+        exec(u,ts){const t=ts[0];const fx=[];let total=0;for(let i=0;i<7;i++){const p=Math.random()<.6;const dmg=calcDamage(u,t,p?.30:.50,'physical');total+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:`${p?'👊':'🦵'} Hit ${i+1}! → ${dmg}`})}fx.push({type:'stun',target:t.id,dur:2,text:`💫 Cici 7-Hit Combo! All hit! → ${t.name} stunned 2 turns! Total: ${total}`});return fx}},
+      ultimate:{name:'Spirit: Stand User',desc:'Cici + Feliz + LJ triple strike, 120% each, last hit crits',
+        exec(u,ts){const t=ts[0];const d1=calcDamage(u,t,1.2,'physical');const d2=calcDamage(u,t,1.2,'magic');const d3=Math.floor(calcDamage(u,t,1.2,'magic')*1.5);return[{type:'damage',target:t.id,amount:d1,text:`👊 Cici attacks! 120% physical → ${t.name} takes ${d1}`},{type:'damage',target:t.id,amount:d2,text:`✨ Feliz assist! 120% magic → ${t.name} takes ${d2}`},{type:'damage',target:t.id,amount:d3,text:`💬 LJ Curse Headshot! 120%×1.5 → ${t.name} takes ${d3} 💥`}]}}
     },
-    reminisce:{name:'meow',desc:'敌方全体-15%伤害一回合',exec(u,team,enemies){return enemies.map(e=>({type:'debuff',target:e.id,stat:'damage',val:-.15,dur:1,text:`😺 meow！${e.name}-15%！`}))}}
+    reminisce:{name:'meow',desc:'All enemies -20% ATK for 2 turns',exec(u,team,enemies){return enemies.map(e=>({type:'debuff',target:e.id,stat:'damage',val:-.20,dur:2,text:`😺 meow! → ${e.name} ATK -20%, 2 turns!`}))}}
   },
-  charlotte:{id:'charlotte',name:'Charlotte',rarity:'SR',gender:'female',role:'强化',emoji:'💖',maxHp:1200,baseDamage:100,maxStamina:8,startStamina:5,
+
+  charlotte:{id:'charlotte',name:'Charlotte',rarity:'SR',gender:'female',role:'Support',emoji:'💖',maxHp:1200,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'2級',jjkRankEn:'Grade 2',
     skills:{
-      skill1:{name:'技能复刻',type:'special',cost:1,tv:2,desc:'复刻队友技能70%效果',exec(u,ts,all,al){return[{type:'text',text:'🔄 技能复刻！70%效果！'}]}},
-      skill2:{name:'攻击强化',type:'buff',cost:2,tv:3,desc:'队友+20%攻击',exec(u,ts,all,al){return[{type:'buff',target:al[0]?.id||u.id,stat:'damage',val:.2,dur:1,text:'✨ 攻击强化+20%！'}]}},
-      skill3:{name:'全队体力恢复',type:'buff',cost:3,tv:4,desc:'全队（除自己）+1体力持续三回合',exec(u,ts,all,al){return al.filter(a=>a.id!==u.id).map(a=>({type:'stamina',target:a.id,amount:1,text:`💖 ${a.name}体力+1！`}))}},
-      ultimate:{name:'双人转',desc:'全体50%伤害三回合',exec(u,ts){const fx=[];for(let r=0;r<3;r++)ts.forEach(t=>fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,.5,'magic'),text:`💃 双人转第${r+1}轮！`}));return fx}}
+      skill1:{name:'Skill Copy',type:'buff',cost:1,tv:2,desc:'Target ally +25% ATK 2 turns + 1 stamina',
+        exec(u,ts,all,al){const tgt=al[0];if(!tgt)return[];return[{type:'buff',target:tgt.id,stat:'damage',val:.25,dur:2,text:`🔄 Charlotte Skill Copy → ${tgt.name} ATK +25%, 2 turns!`},{type:'stamina',target:tgt.id,amount:1,text:`🔄 ${tgt.name} +1 stamina`}]}},
+      skill2:{name:'Attack Boost',type:'buff',cost:2,tv:3,desc:'Ally +30% ATK +15% magic, 2 turns',
+        exec(u,ts,all,al){const tgt=al[0];if(!tgt)return[];return[{type:'buff',target:tgt.id,stat:'damage',val:.30,dur:2,text:`✨ Charlotte boost → ${tgt.name} ATK +30%, 2 turns!`},{type:'buff',target:tgt.id,stat:'magicDamage',val:.15,dur:2,text:`✨ ${tgt.name} magic +15%, 2 turns!`}]}},
+      skill3:{name:'Team Stamina Recovery',type:'buff',cost:2,tv:4,desc:'Full team (excl. self) +2 stamina +10% ATK',
+        exec(u,ts,all,al){return al.filter(a=>a.id!==u.id).flatMap(a=>[{type:'stamina',target:a.id,amount:2,text:`💖 ${a.name} +2 stamina!`},{type:'buff',target:a.id,stat:'damage',val:.10,dur:2,text:`💖 ${a.name} ATK +10%, 2 turns`}])}},
+      ultimate:{name:'Duo Dance',desc:'Dance with Zane! All enemies 80% magic ×3 rounds + DoT',
+        exec(u,ts){const fx=[];let totalDmg=0;for(let r=0;r<3;r++){ts.forEach(t=>{const dmg=calcDamage(u,t,.8,'magic');totalDmg+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:`💃 Duo Dance Round ${r+1}! → ${t.name} takes ${dmg} magic damage`})})}ts.forEach(t=>fx.push({type:'dot',target:t.id,amount:calcDamage(u,t,.3,'magic'),dur:2,text:`💃 Dance Afterglow! ${t.name} takes DoT for 2 turns`}));fx.push({type:'text',text:`💃 Duo Dance Ult End! 3 rounds total: ${totalDmg}`});return fx}}
     }
   },
-  lj:{id:'lj',name:'LJ',rarity:'SR',gender:'female',role:'攻击',emoji:'💬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  lj:{id:'lj',name:'LJ',rarity:'SR',gender:'female',role:'Offense',emoji:'💬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'2級',jjkRankEn:'Grade 2',
     skills:{
-      skill1:{name:'咒言：阿hi呀',type:'magic',cost:1,tv:2,desc:'80%法术伤害',exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.8,'magic'),text:'💬 阿hi呀！'}]}},
-      skill2:{name:'emo警告',type:'magic',cost:2,tv:3,desc:'三人各30-50%法术',exec(u,ts){const t=ts[0];return[0,1,2].map(i=>({type:'damage',target:t.id,amount:calcDamage(u,t,.3+Math.random()*.2,'magic'),text:`😷 咒言${i+1}！`}))}},
-      skill3:{name:'背叛的力量',type:'special',cost:3,tv:4,desc:'队友-10%，对手雷劈160%',
-        exec(u,ts,all,al){const fx=[];if(al.length)fx.push({type:'debuff',target:al[Math.floor(Math.random()*al.length)].id,stat:'damage',val:-.1,dur:1,text:'📸 照片！'});fx.push({type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],1.6,'magic'),text:'⚡ 天雷！160%！'});return fx}},
-      ultimate:{name:'咒言术：集体输出',desc:'5友人各150-300%法术',exec(u,ts){return[0,1,2,3,4].map(i=>{const t=ts[Math.floor(Math.random()*ts.length)];const m=1.5+Math.random()*1.5;return{type:'damage',target:t.id,amount:calcDamage(u,t,m,'magic'),text:`💬 友人${i+1}！${(m*100).toFixed(0)}%！`}})}}
+      skill1:{name:'Curse: Ah Hi Ya',type:'magic',cost:1,tv:2,desc:'90% Magic Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],.9,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`💬 Ah Hi Ya! → ${ts[0].name} takes ${dmg} magic damage`}]}},
+      skill2:{name:'Emo Warning',type:'magic',cost:2,tv:3,desc:'3 curses at 35-60% each, guaranteed hit',
+        exec(u,ts){const t=ts[0];let total=0;const fx=[0,1,2].map(i=>{const m=.35+Math.random()*.25;const dmg=calcDamage(u,t,m,'magic');total+=dmg;return{type:'damage',target:t.id,amount:dmg,text:`😷 Curse ${i+1}: ${(m*100).toFixed(0)}% → ${t.name} takes ${dmg} magic damage`}});fx.push({type:'text',text:`😷 Emo Warning done! 3-curse total: ${total}`});return fx}},
+      skill3:{name:'Power of Betrayal',type:'special',cost:2,tv:4,desc:'Random ally -10% ATK, enemy hit by lightning 200%',
+        exec(u,ts,all,al){const fx=[];if(al.length){const v=al[Math.floor(Math.random()*al.length)];fx.push({type:'debuff',target:v.id,stat:'damage',val:-.1,dur:1,text:`📸 LJ posted ${v.name}'s photo! ATK -10% next turn`})}const dmg=calcDamage(u,ts[0],2.0,'magic');fx.push({type:'damage',target:ts[0].id,amount:dmg,text:`⚡ Lightning Strike! 200% magic → ${ts[0].name} takes ${dmg} damage!`});return fx}},
+      ultimate:{name:'Curse Art: Group Strike',desc:'7 spirit hits at 160-320% magic each, random targets',
+        exec(u,ts){let totalDmg=0;const fx=[0,1,2,3,4,5,6].map(i=>{const t=ts[Math.floor(Math.random()*ts.length)];const m=1.6+Math.random()*1.6;const dmg=calcDamage(u,t,m,'magic');totalDmg+=dmg;return{type:'damage',target:t.id,amount:dmg,text:`💬 Spirit ${i+1}! ${(m*100).toFixed(0)}% → ${t.name} takes ${dmg} damage`}});fx.push({type:'text',text:`💬 Group Curse End! 7-hit total: ${totalDmg}`});return fx}}
     },
-    reminisce:{name:'drama课友情',desc:'二技能+30%',exec(u){return[{type:'buff',target:u.id,stat:'skill2Boost',val:.3,dur:999,text:'🎭 drama友情！二技能+30%！'}]}}
+    reminisce:{name:'Drama Class Bond',desc:'Skill 2 magic damage +40%, 2 turns',exec(u){return[{type:'buff',target:u.id,stat:'magicDamage',val:.40,dur:2,text:'🎭 Drama Class Bond! Magic +40%, 2 turns!'}]}}
   },
-  michelle:{id:'michelle',name:'Michelle',rarity:'SSR',gender:'female',role:'弱化',emoji:'💰',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  michelle:{id:'michelle',name:'Michelle',rarity:'SSR',gender:'female',role:'Debuffer',emoji:'💰',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'準特1級',jjkRankEn:'Semi-Special Grade',
     skills:{
-      skill1:{name:'数学天才',type:'control',cost:2,tv:2,desc:'迷惑敌方只能用一技能',exec(u,ts){return[{type:'limit',target:ts[0].id,dur:1,text:`🧮 ${ts[0].name}只能用一技能！`}]}},
-      skill2:{name:'钞能力',type:'control',cost:3,tv:3,desc:'敌方叛变一回合',exec(u,ts){return[{type:'defect',target:ts[0].id,dur:1,text:`💸 ${ts[0].name}被收买！`}]}},
-      skill3:{name:'手办赠送',type:'buff',cost:4,tv:4,desc:'全队+15%攻击两回合',exec(u,ts,all,al){return al.map(a=>({type:'buff',target:a.id,stat:'damage',val:.15,dur:2,text:`🎁 ${a.name}手办！+15%！`}))}},
-      ultimate:{name:'领域展开：老虎机',desc:'40%/40%/20%三种结果',
-        exec(u,ts){const r=Math.random();if(r<.4)return[...ts.map(t=>({type:'damage',target:t.id,amount:calcDamage(u,t,1.5,'magic'),text:'🎰 无相同！150%+眩晕！'})),...ts.map(t=>({type:'stun',target:t.id,dur:1}))];if(r<.8){const fx=[];for(let i=0;i<5;i++){const t=ts[Math.floor(Math.random()*ts.length)];fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,Math.random()<.5?.3:.5,'magic'),text:`🎲 魔方${i+1}！`})}return fx}return ts.map(t=>({type:'damage',target:t.id,amount:calcDamage(u,t,4,'magic'),text:'💥 JACKPOT！400%！'}))}}
+      skill1:{name:'Math Genius',type:'control',cost:1,tv:2,desc:'Confuse enemy, next turn limited to 1 skill',
+        exec(u,ts){const t=ts[0];return[{type:'debuff',target:t.id,stat:'damage',val:-.15,dur:1,text:`🧮 ${t.name} confused by math! ATK -15%!`},{type:'text',text:`🧮 ${t.name} limited to 1 skill next turn!`}]}},
+      skill2:{name:'Cash Power',type:'control',cost:2,tv:3,desc:'Enemy defects for 1 turn + ATK -20%',
+        exec(u,ts){const t=ts[0];return[{type:'defect',target:t.id,dur:1,text:`💸 ${t.name} bought out with cash! Defects 1 turn!`},{type:'debuff',target:t.id,stat:'damage',val:-.20,dur:1,text:`💸 ${t.name} ATK -20% next turn`}]}},
+      skill3:{name:'Figure Gift',type:'buff',cost:3,tv:4,desc:'Team +20% ATK +15% magic, 2 turns',
+        exec(u,ts,all,al){return al.flatMap(a=>[{type:'buff',target:a.id,stat:'damage',val:.20,dur:2,text:`🎁 ${a.name} gets a figure! ATK +20%!`},{type:'buff',target:a.id,stat:'magicDamage',val:.15,dur:2,text:`🎁 ${a.name} magic +15%!`}])}},
+      ultimate:{name:'Domain Expansion: Slot Machine',desc:'Guaranteed! 30% stun all+200%, 50% five-hit random, 20% all 500% nuke',
+        exec(u,ts){const r=Math.random();if(r<.30){const fx=ts.flatMap(t=>{const dmg=calcDamage(u,t,2.0,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`🎰 No Match! → ${t.name} takes ${dmg} magic damage`},{type:'stun',target:t.id,dur:1,text:`🎰 ${t.name} stunned by the slots! 1 turn!`}]});return fx}if(r<.80){const fx=[];let totalDmg=0;for(let i=0;i<5;i++){const t=ts[Math.floor(Math.random()*ts.length)];const m=.5+Math.random()*.8;const dmg=calcDamage(u,t,m,'magic');totalDmg+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:`🎲 Dice Roll ${i+1}! ${(m*100).toFixed(0)}% → ${t.name} takes ${dmg}`})}fx.push({type:'text',text:`🎲 Five-Roll Combo done! Total: ${totalDmg}`});return fx}const fx=ts.map(t=>{const dmg=calcDamage(u,t,5.0,'magic');return{type:'damage',target:t.id,amount:dmg,text:`💥 JACKPOT! NUKE 500%! → ${t.name} takes ${dmg} annihilation damage!!!`}});fx.push({type:'text',text:'💥 JACKPOT! Triple slots! Divine punishment has arrived!'});return fx}}
     }
   },
-  trex:{id:'trex',name:'Trex',rarity:'SR',gender:'male',role:'弱化',emoji:'🔑',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  trex:{id:'trex',name:'Trex',rarity:'SR',gender:'male',role:'Debuffer',emoji:'🔑',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'3級',jjkRankEn:'Grade 3',
     skills:{
-      skill1:{name:'钥匙扣攻击',type:'magic',cost:1,tv:2,desc:'85%法术伤害',exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.85,'magic'),text:'🔑 钥匙扣！'}]}},
-      skill2:{name:'魔戒控制',type:'magic',cost:2,tv:3,desc:'3×40%，减全体触发值',exec(u,ts){const fx=[0,1,2].map(i=>({type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.4,'magic'),text:`🔑 第${i+1}扣！`}));ts.forEach(t=>fx.push({type:'reduceTrigger',target:t.id,amount:1}));return fx}},
-      skill3:{name:'中间商赚差价',type:'special',cost:3,tv:4,desc:'夺敌方体力给己方',exec(u,ts,all,al){const re=[...ts].sort((a,b)=>b.stamina-a.stamina)[0];const pa=[...al].sort((a,b)=>a.stamina-b.stamina)[0];return[{type:'stealStamina',from:re?.id,to:u.id,amount:1,text:'💰 差价赚到！'},{type:'stamina',target:pa?.id,amount:1}]}},
-      ultimate:{name:'Keychain Rain',desc:'三回合钥匙扣雨每个10%',exec(u,ts){const fx=[];for(let r=0;r<3;r++){const c=7+Math.floor(Math.random()*4);ts.forEach(t=>{for(let k=0;k<c;k++)fx.push({type:'damage',target:t.id,amount:calcDamage(u,t,.1,'magic')})});fx.push({type:'text',text:`🌧️ 第${r+1}轮！${c}扣！`})}return fx}}
+      skill1:{name:'Keychain Strike',type:'magic',cost:1,tv:2,desc:'100% Magic Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],1.0,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🔑 Keychain flung! → ${ts[0].name} takes ${dmg} magic damage`}]}},
+      skill2:{name:'Ring Control',type:'magic',cost:2,tv:3,desc:'Triple 40% hits + all enemies trigger value -2',
+        exec(u,ts){let total=0;const fx=[0,1,2].map(i=>{const dmg=calcDamage(u,ts[0],.4,'magic');total+=dmg;return{type:'damage',target:ts[0].id,amount:dmg,text:`🔑 Key ${i+1}! → ${ts[0].name} takes ${dmg}`}});ts.forEach(t=>fx.push({type:'reduceTrigger',target:t.id,amount:2,text:`🔑 ${t.name} trigger value -2! (Ring Control)`}));fx.push({type:'text',text:`🔑 Ring Control done! Total: ${total}, all trigger -2`});return fx}},
+      skill3:{name:'The Middleman Markup',type:'special',cost:2,tv:4,desc:'Steal 3 stamina from highest stamina enemy, give 1 to lowest ally',
+        exec(u,ts,all,al){const re=[...ts].sort((a,b)=>b.stamina-a.stamina)[0];const pa=[...al].sort((a,b)=>a.stamina-b.stamina)[0];const stolen=Math.min(3,re?.stamina||0);return[{type:'stealStamina',from:re?.id,to:u.id,amount:stolen,text:`💰 Stole ${stolen} stamina from ${re?.name}! Markup secured!`},{type:'stamina',target:pa?.id,amount:1,text:`💰 Passed 1 stamina to ${pa?.name}`}]}},
+      ultimate:{name:'Keychain Rain',desc:'3 rounds of keychain rain, 10-14 keys at 15% each, reduce all trigger values',
+        exec(u,ts){const fx=[];let totalDmg=0;for(let r=0;r<3;r++){const c=10+Math.floor(Math.random()*5);let roundDmg=0;ts.forEach(t=>{for(let k=0;k<c;k++){const dmg=calcDamage(u,t,.15,'magic');roundDmg+=dmg;totalDmg+=dmg;fx.push({type:'damage',target:t.id,amount:dmg})}});fx.push({type:'text',text:`🌧️ Keychain Rain Round ${r+1}! ${c} keys → round damage: ${roundDmg}`})}ts.forEach(t=>fx.push({type:'reduceTrigger',target:t.id,amount:2,text:`🌧️ ${t.name} suppressed by the rain! Trigger -2`}));fx.push({type:'text',text:`🌧️ Keychain Rain End! Total damage: ${totalDmg}`});return fx}}
     },
-    reminisce:{name:'300铢三个钥匙扣',desc:'法术+25%两回合，回血20%',exec(u){return[{type:'buff',target:u.id,stat:'magicDamage',val:.25,dur:2,text:'🔑 300铢！法术+25%！'},{type:'heal',target:u.id,amount:Math.floor(u.maxHp*.2)}]}}
+    reminisce:{name:'300 Baht, Three Keychains',desc:'Magic +35% 2 turns, heal 25%, reduce all enemy trigger values by 3',exec(u,team,enemies){const h=Math.floor(u.maxHp*.25);return[{type:'buff',target:u.id,stat:'magicDamage',val:.35,dur:2,text:'🔑 300 Baht! Magic +35%, 2 turns!'},{type:'heal',target:u.id,amount:h,text:`🔑 Trex heals ${h} HP`},...(enemies||[]).map(e=>({type:'reduceTrigger',target:e.id,amount:3,text:`🔑 ${e.name} trigger -3! (Business Pressure)`}))]}}
   },
-  madame:{id:'madame',name:'Madame',rarity:'SSSR',gender:'female',role:'攻击/弱化',emoji:'🥐',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  madame:{id:'madame',name:'Madame',rarity:'SSSR',gender:'female',role:'Offense / Debuff',emoji:'🥐',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'特級',jjkRankEn:'Special Grade',
     skills:{
-      skill1:{name:'Patate',type:'magic',cost:1,tv:2,desc:'130%法术+薯条标记',exec(u,ts){const t=ts[0];return[{type:'damage',target:t.id,amount:calcDamage(u,t,1.3,'magic'),text:'🥔 Patate！130%！'},{type:'mark',target:t.id,mtype:'frites',stacks:1,max:3,text:`🍟 薯条标记！`}]}},
-      skill2:{name:"C'est parti mon kiki",type:'heal',cost:2,tv:3,desc:'清2减益，最低血量队友250护盾',
-        exec(u,ts,all,al){const lo=[...al].sort((a,b)=>a.hp-b.hp)[0];return[...al.map(a=>({type:'cleanse',target:a.id,count:2,text:`✨ ${a.name}清除减益！`})),{type:'shield',target:lo?.id,amount:250,text:'🥐 可颂护盾250！'}]}},
-      skill3:{name:'Baguette',type:'mixed',cost:4,tv:4,desc:'全体140%，每层薯条+5%真伤',
-        exec(u,ts){return ts.flatMap(t=>{const s=t.marks?.frites||0;const td=Math.floor(t.hp*.05*s);const fx=[{type:'damage',target:t.id,amount:calcDamage(u,t,1.4,'physical'),text:'🥖 Baguette！140%！'}];if(td>0)fx.push({type:'truedamage',target:t.id,amount:td,text:`🍟 薯条×${s}真伤！`});fx.push({type:'debuff',target:t.id,stat:'magicResist',val:.2,dur:2});return fx})}},
-      ultimate:{name:'On Ecrit',desc:'诅咒两回合，60%跳回合+12%真伤',exec(u,ts){return ts.map(t=>({type:'curse',target:t.id,skipChance:.6,trueDmgRatio:.12,dur:2,text:`📖 ${t.name}被诅咒2回合！`}))}}
+      skill1:{name:'Patate',type:'magic',cost:1,tv:2,desc:'140% magic + Fries Mark (max 3 stacks)',
+        exec(u,ts){const t=ts[0];const stacks=(t.marks?.frites||0);const dmg=calcDamage(u,t,1.4,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`🥔 Patate! 140% magic → ${t.name} takes ${dmg} damage (Fries: ${stacks} stacks)`},{type:'mark',target:t.id,mtype:'frites',stacks:1,max:3,text:`🍟 ${t.name} gets Fries Mark! (${stacks+1}/3 stacks)`}]}},
+      skill2:{name:"C'est parti mon kiki",type:'heal',cost:2,tv:3,desc:'Cleanse 3 debuffs for all allies, lowest HP gets 300 shield +20% heal',
+        exec(u,ts,all,al){const lo=[...al,u].sort((a,b)=>a.hp-b.hp)[0];const h=Math.floor(lo.maxHp*.20);return[...al.map(a=>({type:'cleanse',target:a.id,count:3,text:`✨ ${a.name} cleansed 3 debuffs!`})),{type:'cleanse',target:u.id,count:3},{type:'shield',target:lo.id,amount:300,text:`🥐 ${lo.name} gets Croissant Shield 300!`},{type:'heal',target:lo.id,amount:h,text:`🥐 ${lo.name} heals ${h} HP (20%)`}]}},
+      skill3:{name:'Baguette',type:'mixed',cost:3,tv:4,desc:'All enemies 150% physical, each Fries stack +8% true dmg + magic resist -25%',
+        exec(u,ts){return ts.flatMap(t=>{const s=t.marks?.frites||0;const td=Math.floor(t.hp*.08*s);const dmg=calcDamage(u,t,1.5,'physical');const fx=[{type:'damage',target:t.id,amount:dmg,text:`🥖 Baguette! 150% physical → ${t.name} takes ${dmg} damage`}];if(td>0)fx.push({type:'truedamage',target:t.id,amount:td,text:`🍟 Fries ×${s} stacks true damage! → ${t.name} takes extra ${td} true damage`});fx.push({type:'debuff',target:t.id,stat:'magicResist',val:.25,dur:3,text:`🥖 ${t.name} magic resist -25%, 3 turns`});return fx})}},
+      ultimate:{name:'On Écrit',desc:'Fate is Written! All enemies cursed 3 turns, 70% skip turn + 15% true dmg/turn',
+        exec(u,ts){return ts.map(t=>({type:'curse',target:t.id,skipChance:.70,trueDmgRatio:.15,dur:3,text:`📖 Fate is Written! → ${t.name} cursed by Madame! 70% skip turn + 15% true dmg/turn for 3 turns!`}))}}
     },
-    reminisce:{name:'Le Examen',desc:'全队-50%，自身+120%两回合',exec(u,team){return[...team.filter(m=>m.id!==u.id).map(m=>({type:'debuff',target:m.id,stat:'damage',val:-.5,dur:2})),{type:'buff',target:u.id,stat:'damage',val:1.2,dur:2,text:'📝 Le Examen！+120%！'}]}}
+    reminisce:{name:'Le Examen',desc:'Team ATK -60%, self +150% damage, 2 turns',exec(u,team){return[...team.filter(m=>m.id!==u.id).map(m=>({type:'debuff',target:m.id,stat:'damage',val:-.6,dur:2,text:`📝 ${m.name} cleared the way for Madame's exam! ATK -60%`})),{type:'buff',target:u.id,stat:'damage',val:1.5,dur:2,text:'📝 Le Examen! Madame damage +150%, 2 turns!'}]}}
   },
-  feliz:{id:'feliz',name:'Feliz',rarity:'R',gender:'male',role:'强化',emoji:'🎬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+
+  feliz:{id:'feliz',name:'Feliz',rarity:'R',gender:'male',role:'Support',emoji:'🎬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
+    jjkRank:'3級',jjkRankEn:'Grade 3',
     skills:{
-      skill1:{name:'出拳',type:'physical',cost:1,tv:2,desc:'70%体术伤害',exec(u,ts){return[{type:'damage',target:ts[0].id,amount:calcDamage(u,ts[0],.7,'physical'),text:'👊 出拳！'}]}},
-      skill2:{name:'YouTuber Aura',type:'buff',cost:2,tv:3,desc:'队友减伤50%一回合',exec(u,ts,all,al){return[{type:'buff',target:al[0]?.id||u.id,stat:'damageReduce',val:.5,dur:1,text:'📹 YouTuber Aura！-50%伤害！'}]}},
-      skill3:{name:'Bunny Hop',type:'buff',cost:3,tv:4,desc:'全队+1体力，-10%受伤两回合',exec(u,ts,all,al){return[...al.map(a=>({type:'buff',target:a.id,stat:'damageReduce',val:.1,dur:2,text:`🐰 ${a.name} Bunny Hop！`})),...al.map(a=>({type:'stamina',target:a.id,amount:1}))]}},
-      ultimate:{name:'通灵术：召唤大黑',desc:'两人各140%法术伤害',exec(u,ts){return ts.slice(0,2).map(t=>({type:'damage',target:t.id,amount:calcDamage(u,t,1.4,'magic'),text:`🐕 大黑！140%！`}))}}
+      skill1:{name:'Punch',type:'physical',cost:1,tv:2,desc:'85% Physical Damage',
+        exec(u,ts){const dmg=calcDamage(u,ts[0],.85,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Feliz punches! → ${ts[0].name} takes ${dmg} physical damage`}]}},
+      skill2:{name:'YouTuber Aura',type:'buff',cost:1,tv:3,desc:'One ally takes 60% less damage, 2 turns',
+        exec(u,ts,all,al){const tgt=al[0];if(!tgt)return[];return[{type:'buff',target:tgt.id,stat:'damageReduce',val:.60,dur:2,text:`📹 YouTuber Aura! → ${tgt.name} takes 60% less damage, 2 turns!`}]}},
+      skill3:{name:'Bunny Hop',type:'buff',cost:2,tv:4,desc:'Team +2 stamina, team -15% damage taken, 2 turns',
+        exec(u,ts,all,al){const targets=[u,...al];return targets.flatMap(a=>[{type:'stamina',target:a.id,amount:2,text:`🐰 ${a.name} +2 stamina!`},{type:'buff',target:a.id,stat:'damageReduce',val:.15,dur:2,text:`🐰 ${a.name} damage -15%, 2 turns`}])}},
+      ultimate:{name:'Spirit Art: Summon Dachshund',desc:'Dog goes wild! 180% magic damage to all enemies',
+        exec(u,ts){let totalDmg=0;const fx=ts.map(t=>{const dmg=calcDamage(u,t,1.8,'magic');totalDmg+=dmg;return{type:'damage',target:t.id,amount:dmg,text:`🐕 Dachshund attacks! 180% magic → ${t.name} takes ${dmg} damage`}});fx.push({type:'text',text:`🐕 Dachshund sweep done! All enemies total: ${totalDmg}`});return fx}}
     }
   }
 };
@@ -972,7 +1067,7 @@ class Engine{
     this.t1=t1ids.map(id=>this.mkChar(CHARS[id],1));
     this.t2=t2ids.map(id=>this.mkChar(CHARS[id],2));
     this.state='BATTLE';this.cTeam=1;this.cIdx=0;this.round=1;this.log=[];
-    this.addLog('⚔️ 战斗开始！','system');
+    this.addLog('⚔️ Battle Start!','system');
     return this.snap();
   }
   snap(){return{t1:this.t1,t2:this.t2,cTeam:this.cTeam,cChar:this.getCur(),round:this.round,log:this.log,state:this.state,winner:this.winner()}}
@@ -983,37 +1078,37 @@ class Engine{
   act(atype,skey,tids){
     const actor=this.getCur();
     if(!actor||!actor.alive){this.next();return this.snap()}
-    if(actor.stunned){this.addLog(`😵 ${actor.name}被眩晕，跳过！`,'stun');this.next();return this.snap()}
+    if(actor.stunned){this.addLog(`😵 ${actor.name} is stunned! Turn skipped!`,'stun');this.next();return this.snap()}
     const enemies=this.enemies(),allies=this.allies().filter(c=>c.id!==actor.id);
     const allC=this.all();
     let fx=[];
     if(atype==='skill'){
       const sk=actor.skills[skey];
       if(!sk)return this.snap();
-      if(actor.stamina<sk.cost){this.addLog(`⚠️ ${actor.name}体力不足！`,'warning');return this.snap()}
+      if(actor.stamina<sk.cost){this.addLog(`⚠️ ${actor.name} not enough stamina!`,'warning');return this.snap()}
       actor.stamina=Math.max(0,actor.stamina-sk.cost);
       if(sk.tv)actor.tv+=sk.tv;
-      if(actor.tv>=10)this.addLog(`💥 ${actor.name}触发值满！大招可用！`,'system');
+      if(actor.tv>=10)this.addLog(`💥 ${actor.name} trigger value full! ULTIMATE READY!`,'system');
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length&&enemies.length)tgts.push(enemies[0]);
-      this.addLog(`🔥 ${actor.name}使用${sk.name}！`,'action');
+      this.addLog(`🔥 ${actor.name} uses ${sk.name}!`,'action');
       try{fx=sk.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Skill error:',e);fx=[]}
     }else if(atype==='ultimate'){
-      if(actor.tv<10){this.addLog(`⚠️ 触发值不足(${actor.tv}/10)！`,'warning');return this.snap()}
+      if(actor.tv<10){this.addLog(`⚠️ Trigger value insufficient (${actor.tv}/10)!`,'warning');return this.snap()}
       actor.tv=0;
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length)tgts.push(...enemies);
-      this.addLog(`💥 ${actor.name}大招：${actor.skills.ultimate.name}！`,'ultimate');
+      this.addLog(`💥 ${actor.name} ULTIMATE: ${actor.skills.ultimate.name}!`,'ultimate');
       try{fx=actor.skills.ultimate.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Ultimate error:',e);fx=[]}
     }else if(atype==='reminisce'){
-      if(actor.remUsed){this.addLog('⚠️ 回想已使用！','warning');return this.snap()}
+      if(actor.remUsed){this.addLog('⚠️ Reminisce already used!','warning');return this.snap()}
       actor.remUsed=true;
-      this.addLog(`💫 ${actor.name}回想：${actor.reminisce?.name}！`,'reminisce');
+      this.addLog(`💫 ${actor.name} Reminisce: ${actor.reminisce?.name}!`,'reminisce');
       try{fx=actor.reminisce?.exec(actor,this.cTeam===1?this.t1:this.t2,this.cTeam===1?this.t2:this.t1)||[]}catch(e){console.error('Reminisce error:',e);fx=[]}
     }
     this.applyFx(fx);
     const w=this.winner();
-    if(w){this.state='GAMEOVER';this.addLog(`🏆 Team${w}获胜！`,'system');return this.snap()}
+    if(w){this.state='GAMEOVER';this.addLog(`🏆 Team ${w} wins!`,'system');return this.snap()}
     if(atype!=='reminisce')this.next();
     return this.snap();
   }
@@ -1030,16 +1125,17 @@ class Engine{
           if(!t)break;
           const loc=this.loc();let dmg=f.amount||0;
           if(loc==='head')dmg=Math.floor(dmg*1.5);
-          if(loc==='dodge'){this.addLog(`💨 ${t.name}躲避！`,'dodge');break}
+          if(loc==='dodge'){this.addLog(`💨 ${t.name} dodges!`,'dodge');break}
           if(t.shield>0){const ab=Math.min(t.shield,Math.floor(dmg*.5));t.shield-=ab;dmg-=ab}
           t.hp=Math.max(0,t.hp-dmg);
-          this.addLog(`💢 ${t.name}-${dmg}${loc==='head'?' 💥爆头':''}！HP:${t.hp}`,'damage');
+          this.addLog(`💢 ${t.name} -${dmg}${loc==='head'?' 💥HEADSHOT':''}! HP: ${t.hp}`,'damage');
           if(t.hp<=0)this.kill(t);break}
-        case'truedamage':if(!t)break;t.hp=Math.max(0,t.hp-(f.amount||0));this.addLog(`☠️ ${t.name}真伤-${f.amount}！HP:${t.hp}`,'truedamage');if(t.hp<=0)this.kill(t);break;
-        case'heal':{if(!t)break;const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+(f.amount||0));if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name}回复${f.amount}，溢出${ov}→护盾！`,'heal')}else this.addLog(`💚 ${t.name}回复${f.amount}(${t.hp}/${t.maxHp})`,'heal');break}
-        case'shield':if(!t)break;t.shield=(t.shield||0)+(f.amount||0);this.addLog(`🛡️ ${t.name}+${f.amount}护盾！`,'shield');break;
+        case'truedamage':if(!t)break;t.hp=Math.max(0,t.hp-(f.amount||0));this.addLog(`☠️ ${t.name} true dmg -${f.amount}! HP: ${t.hp}`,'truedamage');if(t.hp<=0)this.kill(t);break;
+        case'heal':{if(!t)break;const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+(f.amount||0));if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name} heals ${f.amount}, overflow ${ov} → shield!`,'heal')}else this.addLog(`💚 ${t.name} heals ${f.amount} (${t.hp}/${t.maxHp})`,'heal');break}
+        case'shield':if(!t)break;t.shield=(t.shield||0)+(f.amount||0);this.addLog(`🛡️ ${t.name} +${f.amount} shield!`,'shield');break;
         case'stun':if(!t)break;t.stunned=true;t.stunDur=(f.dur||f.duration||1);break;
-        case'buff':if(!t)break;t.buffs.push({stat:f.stat,value:(f.val!==undefined?f.val:f.value)||0,duration:(f.dur||f.duration||1)});break;
+        case'buff':if(!t)break;{const bv=(f.val!==undefined?f.val:f.value)||0;const bd=(f.dur||f.duration||1);t.buffs.push({stat:f.stat,value:bv,duration:bd});// Harrison guarantee passive: any buff on same-team ally also copies to Harrison
+const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id==='harrison'&&c.alive&&c.id!==t.id);if(harrison&&CHARS.harrison.harrisonGuarantee){harrison.buffs.push({stat:f.stat,value:bv,duration:bd});this.addLog(`👟 Harrison Passive: copied ${f.stat} buff from ${t.name}!`,'info')}}break;
         case'debuff':if(!t)break;t.debuffs.push({stat:f.stat,value:(f.val!==undefined?f.val:f.value)||0,duration:(f.dur||f.duration||1)});break;
         case'dot':if(!t)break;t.dots.push({amount:(f.amount||0),duration:(f.dur||f.duration||4)});break;
         case'stamina':if(!t)break;t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));break;
@@ -1053,8 +1149,8 @@ class Engine{
       }
     }
   }
-  loc(){const r=Math.random();if(r<.1)return'head';if(r<.25)return'dodge';if(r<.625)return'upper';return'legs'}
-  kill(c){c.alive=false;c.hp=0;this.addLog(`💀 ${c.name}被击败！`,'death')}
+  loc(){const r=Math.random();if(r<.10)return'head';if(r<.15)return'dodge';if(r<.575)return'upper';return'legs'}
+  kill(c){c.alive=false;c.hp=0;this.addLog(`💀 ${c.name} is defeated!`,'death')}
   next(){
     const team=this.cTeam===1?this.t1:this.t2;
     const actor=team[this.cIdx];
@@ -1072,12 +1168,12 @@ class Engine{
       }
       const nx=nt[this.cIdx];
       if(!nx){this.cIdx++;continue}
-      if(nx.sitOut>0){nx.sitOut--;if(nx.sitOut<=0){nx.alive=true;nx.stamina=Math.min(nx.maxStamina,nx.stamina+2);this.addLog(`🔙 ${nx.name}回归！`,'return')}this.cIdx++;continue}
+      if(nx.sitOut>0){nx.sitOut--;if(nx.sitOut<=0){nx.alive=true;nx.stamina=Math.min(nx.maxStamina,nx.stamina+2);this.addLog(`🔙 ${nx.name} returns to battle!`,'return')}this.cIdx++;continue}
       if(nx.alive)break;
       this.cIdx++;
     }
     const na=(this.cTeam===1?this.t1:this.t2)[this.cIdx];
-    if(na&&na.stunned){na.stunDur--;if(na.stunDur<=0){na.stunned=false;this.addLog(`😤 ${na.name}恢复！`,'info')}}
+    if(na&&na.stunned){na.stunDur--;if(na.stunDur<=0){na.stunned=false;this.addLog(`😤 ${na.name} recovers from stun!`,'info')}}
   }
   tickFx(c){
     c.buffs=(c.buffs||[]).filter(b=>{b.duration--;return b.duration>0});
@@ -1087,8 +1183,8 @@ class Engine{
   tickDots(){
     [...this.t1,...this.t2].forEach(c=>{
       if(!c.alive)return;
-      c.dots=(c.dots||[]).filter(d=>{c.hp=Math.max(0,c.hp-d.amount);this.addLog(`☠️ ${c.name}持续伤害-${d.amount}！`,'dot');if(c.hp<=0)this.kill(c);d.duration--;return d.duration>0});
-      (c.curses||[]).forEach(cu=>{if(Math.random()<cu.skipChance){const td=Math.floor(c.maxHp*cu.trueDmgRatio);c.hp=Math.max(0,c.hp-td);this.addLog(`📖 ${c.name}诅咒真伤-${td}！`,'curse');if(c.hp<=0)this.kill(c)}});
+      c.dots=(c.dots||[]).filter(d=>{c.hp=Math.max(0,c.hp-d.amount);this.addLog(`☠️ ${c.name} DoT -${d.amount}!`,'dot');if(c.hp<=0)this.kill(c);d.duration--;return d.duration>0});
+      (c.curses||[]).forEach(cu=>{if(Math.random()<cu.skipChance){const td=Math.floor(c.maxHp*cu.trueDmgRatio);c.hp=Math.max(0,c.hp-td);this.addLog(`📖 ${c.name} curse true damage -${td}!`,'curse');if(c.hp<=0)this.kill(c)}});
     });
   }
   winner(){const a=this.t1.some(c=>c.alive),b=this.t2.some(c=>c.alive);if(!a)return 2;if(!b)return 1;return null}
@@ -1126,7 +1222,7 @@ const G={
     Object.values(CHARS).forEach(ch=>{
       const d=document.createElement('div');
       d.className=`char-card rarity-${ch.rarity}`;d.dataset.id=ch.id;
-      d.innerHTML=`<span class="c-emo">${ch.emoji}</span><div class="c-name">${ch.name}</div><span class="c-rarity">${ch.rarity}</span><span class="c-role">${ch.role}</span>`;
+      d.innerHTML=`<span class="c-emo">${ch.emoji}</span><div class="c-name">${ch.name}</div><span class="c-rarity">${ch.rarity}</span><span class="jjk-rank jjk-${ch.jjkRank||'3'}<span class="c-role">${ch.role}</span>`;
       d.addEventListener('click',()=>this.pick(ch.id,d));
       g.appendChild(d);
     });
@@ -1153,7 +1249,7 @@ const G={
           const ch=CHARS[cid];const cls=ti===0?'filled-t1':'filled-t2';
           sl.className=`sel-slot filled ${cls}`;
           sl.style.flexDirection=ti===1?'row-reverse':'row';
-          sl.innerHTML=`<span class="slot-emo">${ch.emoji}</span><div class="slot-info"><div class="slot-name">${ch.name}</div><div class="slot-meta">${ch.rarity} · ${ch.role}</div></div><button class="slot-x" onclick="G.rmv(${ti+1},'${cid}')">✕</button>`;
+          sl.innerHTML=`<span class="slot-emo">${ch.emoji}</span><div class="slot-info"><div class="slot-name">${ch.name}</div><div class="slot-meta">${ch.rarity} · <span class='jjk-rank jjk-${ch.jjkRank}'>${ch.jjkRank}</span> · ${ch.role}</div></div><button class="slot-x" onclick="G.rmv(${ti+1},'${cid}')">✕</button>`;
         }else{
           sl.className='sel-slot';sl.style.flexDirection=ti===1?'row-reverse':'row';
           sl.innerHTML=`<span style="color:var(--txt3);font-size:11px;letter-spacing:2px">SLOT ${i+1}</span>`;
@@ -1225,7 +1321,7 @@ const G={
       d.innerHTML=`
         <div class="f-emo">${ch.alive?ch.emoji:'💀'}</div>
         <div class="f-info">
-          <div class="f-name-row"><span class="f-name">${ch.name}</span><span class="f-badges">${badges}</span></div>
+          <div class="f-name-row"><span class="f-name">${ch.name}</span><span class="jjk-rank jjk-${ch.jjkRank||'3'}<span class="f-badges">${badges}</span></div>
           <div class="f-hp-wrap">
             <div class="f-hp-track"><div class="f-hp-fill" style="width:${pct}%;background:${hc}"></div></div>
             <div class="f-hp-num">${ch.hp}/${ch.maxHp}${ch.shield>0?` 🛡${ch.shield}`:''}</div>
@@ -1261,7 +1357,7 @@ const G={
         <div class="actor-emo">${actor.emoji}</div>
         <div class="actor-info">
           <div class="actor-name">${actor.name}</div>
-          <div class="actor-role">${actor.rarity} · ${actor.role}</div>
+          <div class="actor-role">${actor.rarity} · ${actor.role}</div><div class="actor-jjk"><span class="jjk-rank jjk-${actor.jjkRank||'3級'}">${actor.jjkRank||'3級'} — ${actor.jjkRankEn||''}</span></div>
           <div class="actor-stats"><span>⚡ <b>${actor.stamina}/${actor.maxStamina}</b></span><span>💥 <b>${actor.tv}/10</b></span><span>❤️ <b>${actor.hp}/${actor.maxHp}</b></span></div>
         </div>
       </div>
@@ -1272,12 +1368,12 @@ const G={
         ${sk.ultimate?`<button class="skbtn ult" onclick="G.useSk('ultimate')" ${actor.tv<10||actor.stunned?'disabled':''}>
           <span class="skbtn-icon">💥</span>
           <div class="skbtn-body"><div class="skbtn-name">${sk.ultimate.name}</div><div class="skbtn-desc">${sk.ultimate.desc||sk.ultimate.description||''}</div></div>
-          <span class="skbtn-cost">${actor.tv>=10?'就绪':actor.tv+'/10'}</span>
+          <span class="skbtn-cost">${actor.tv>=10?'READY':actor.tv+'/10'}</span>
         </button>`:''}
         ${actor.reminisce?`<button class="skbtn rem" onclick="G.useRem()" ${actor.remUsed||actor.stunned?'disabled':''}>
           <span class="skbtn-icon">💫</span>
-          <div class="skbtn-body"><div class="skbtn-name">回想: ${actor.reminisce.name}</div><div class="skbtn-desc">${actor.reminisce.desc||''}</div></div>
-          <span class="skbtn-cost">${actor.remUsed?'已用':'FREE'}</span>
+          <div class="skbtn-body"><div class="skbtn-name">Reminisce: ${actor.reminisce.name}</div><div class="skbtn-desc">${actor.reminisce.desc||''}</div></div>
+          <span class="skbtn-cost">${actor.remUsed?'USED':'FREE'}</span>
         </button>`:''}
       </div>
       <div class="target-panel" id="tgt-panel">
@@ -1373,7 +1469,7 @@ const G={
     const ws=document.getElementById('winner-sub');
     wt.className=`winner-text w${w}`;
     wt.textContent=`TEAM ${w} WINS`;
-    ws.textContent=w===1?'🏆 光荣的胜利！':'🏆 反败为胜！';
+    ws.textContent=w===1?'🏆 A Glorious Victory!':'🏆 Comeback Victory!';
   },
 
   restart(){
