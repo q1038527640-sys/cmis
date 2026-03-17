@@ -885,12 +885,12 @@ const CHARS={
     jjkRank:'特級',jjkRankEn:'Special Grade',
     skills:{
       // cost rebalance: sk1=1, sk2=2, sk3=3
-      skill1:{name:'Basketball Strike',type:'magic',targeting:'single_enemy',cost:1,tv:2,desc:'110% Magic Damage',
+      skill1:{name:'Basketball Strike',type:'magic',targeting:'single_enemy',cost:1,tv:1,desc:'110% Magic Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],1.1,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🏀 Basketball Strike! → ${ts[0].name} takes ${dmg} magic damage`}]}},
-      skill2:{name:'Height Dominance',type:'control',targeting:'single_enemy',cost:2,tv:3,desc:'85% dmg + Stun 1 turn + ATK -20%',
+      skill2:{name:'Height Dominance',type:'control',targeting:'single_enemy',cost:2,tv:2,desc:'85% dmg + Stun 1 turn + ATK -20%',
         exec(u,ts){const t=ts[0];const dmg=calcDamage(u,t,.85,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`📏 Height Dominance! → ${t.name} takes ${dmg} damage`},{type:'stun',target:t.id,dur:1,text:`📏 ${t.name} is intimidated! Stunned 1 turn!`},{type:'debuff',target:t.id,stat:'damage',val:-.20,dur:2,text:`📏 ${t.name} ATK -20% for 2 turns`}]}},
       skill3:{name:'Spirit Art: Slam Dunk',type:'magic',targeting:'single_enemy',cost:3,tv:4,desc:'70% chance 280% magic, fail = self-damage 8%',
-        exec(u,ts){const t=ts[0];if(Math.random()<.70){const m=Math.random()<.35?3.8:2.8;const dmg=calcDamage(u,t,m,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`🔥 Spirit Slam Dunk! ${(m*100).toFixed(0)}% magic → ${t.name} takes ${dmg} damage!`}]}const sd=Math.floor(u.maxHp*.08);return[{type:'damage',target:u.id,amount:sd,text:`😭 Slam Dunk failed! Woojoo takes ${sd} self-damage, -10000 aura`}]}},
+        exec(u,ts){const t=ts[0];if(Math.random()<.78){const m=Math.random()<.35?3.8:2.8;const dmg=calcDamage(u,t,m,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`🔥 Spirit Slam Dunk! ${(m*100).toFixed(0)}% magic → ${t.name} takes ${dmg} damage!`}]}const sd=Math.floor(u.maxHp*.08);return[{type:'damage',target:u.id,amount:sd,text:`😭 Slam Dunk failed! Woojoo takes ${sd} self-damage, -10000 aura`}]}},
       ultimate:{name:'Green Killer',targeting:'single_enemy',desc:'Guaranteed 3-ball combo, 100% scaling +25% each shot',
         exec(u,ts){const fx=[];let totalDmg=0;for(let x=1;x<=3;x++){const m=1.0+(x-1)*.25;const dmg=calcDamage(u,ts[0],m,'magic');totalDmg+=dmg;fx.push({type:'damage',target:ts[0].id,amount:dmg,text:`🏀 Green Killer Shot ${x}! ${(m*100).toFixed(0)}% magic → ${ts[0].name} takes ${dmg} damage`})}fx.push({type:'text',text:`🏀 Green Killer Combo End! Total damage: ${totalDmg}`});return fx}}
     },
@@ -900,9 +900,9 @@ const CHARS={
   jeff:{id:'jeff',name:'Jeff',rarity:'SSSR',gender:'male',role:'Healer',emoji:'🍬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'準特1級',jjkRankEn:'Semi-Special Grade',
     skills:{
-      skill1:{name:'Jacket Combo',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'90% Physical Damage',
+      skill1:{name:'Jacket Combo',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'90% Physical Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],.9,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🥊 Jacket Combo! → ${ts[0].name} takes ${dmg} physical damage`}]}},
-      skill2:{name:'Dab Me Up',type:'heal',targeting:'single_ally',cost:2,tv:3,desc:'Ally heals 25% HP + 30% ATK buff',
+      skill2:{name:'Dab Me Up',type:'heal',targeting:'single_ally',cost:2,tv:2,desc:'Ally heals 25% HP + 30% ATK buff',
         exec(u,ts){const t=ts[0];const h=Math.floor(t.maxHp*.25);return[{type:'heal',target:t.id,amount:h,text:`🤜 Dab Me Up! → ${t.name} heals ${h} HP`},{type:'buff',target:t.id,stat:'damage',val:.30,dur:2,text:`🤜 ${t.name} ATK +30% for 2 turns!`}]}},
       skill3:{name:'Where My Hug At',type:'heal',targeting:'all_allies',cost:3,tv:4,desc:'Full team heal 40% HP + 200 shield',
         exec(u,ts,all,al){const targets=[u,...al];return targets.flatMap(t=>{const h=Math.floor(t.maxHp*.40);return[{type:'heal',target:t.id,amount:h,text:`🤗 ${t.name} gets a hug! Heals ${h} HP`},{type:'shield',target:t.id,amount:200,text:`🤗 ${t.name} gains 200 shield`}]})}},
@@ -915,7 +915,7 @@ const CHARS={
   jake:{id:'jake',name:'Jake',rarity:'SSR',gender:'male',role:'Offense',emoji:'🎯',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'1級',jjkRankEn:'Grade 1',
     skills:{
-      skill1:{name:'Psh Psh Psh',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'Combo 25%+40%+55% = 120% total',
+      skill1:{name:'Psh Psh Psh',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'Combo 25%+40%+55% = 120% total',
         exec(u,ts){const t=ts[0];const hits=[.25,.40,.55];const fx=[];let total=0;hits.forEach((m,i)=>{const dmg=calcDamage(u,t,m,'physical');total+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:[`👊 Psh! → ${dmg}`,`💥 Psh Psh! → ${dmg}`,`🔥 PSH!!! → ${dmg}`][i]})});fx.push({type:'text',text:`👊 Triple hit! Total damage: ${total}`});return fx}},
       skill2:{name:'I Am A Model',type:'buff',targeting:'self',cost:1,tv:3,desc:'Self +40% ATK for 2 turns',
         exec(u){return[{type:'buff',target:u.id,stat:'damage',val:.40,dur:2,text:'💅 I Am A Model! ATK +40%, 2 turns!'}]}},
@@ -930,9 +930,9 @@ const CHARS={
   zane:{id:'zane',name:'Zane',rarity:'SSR',gender:'male',role:'Support',emoji:'🔮',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'特級',jjkRankEn:'Special Grade',
     skills:{
-      skill1:{name:'Psh Psh Psh',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'110% Physical Damage',
+      skill1:{name:'Psh Psh Psh',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'110% Physical Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],1.1,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Zane Psh! → ${ts[0].name} takes ${dmg} physical damage`}]}},
-      skill2:{name:'Integrated Algebra 2',type:'buff',targeting:'single_ally',cost:2,tv:3,desc:'Target ally +30% ATK 2 turns, self heal 15% + stamina +1',
+      skill2:{name:'Integrated Algebra 2',type:'buff',targeting:'single_ally',cost:2,tv:2,desc:'Target ally +30% ATK 2 turns, self heal 15% + stamina +1',
         exec(u,ts,all,al){const tgt=ts[0]||al[0];const h=Math.floor(u.maxHp*.15);const fx=[];if(tgt)fx.push({type:'buff',target:tgt.id,stat:'damage',val:.30,dur:2,text:`📚 ${tgt.name} gets Algebra buff! ATK +30%, 2 turns!`});fx.push({type:'heal',target:u.id,amount:h,text:`📚 Zane heals ${h} HP`});fx.push({type:'stamina',target:u.id,amount:1,text:'📚 Zane +1 stamina'});return fx}},
       skill3:{name:'Spirit Art: Random Summon',type:'mixed',targeting:'single_enemy',cost:3,tv:4,desc:'Random summon: Lucas curse / Vincent slam / Harrison shoe rain',
         exec(u,ts){const t=ts[0];const r=Math.random();if(r<.33){const dmg=calcDamage(u,t,2.0,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`💬 Lucas Summon! "Ur MOM!" → ${t.name} takes ${dmg} magic damage`}]}if(r<.66){const dmg=calcDamage(u,t,2.0,'physical');return[{type:'damage',target:t.id,amount:dmg,text:`🤗 Vincent Summon! Princess Slam → ${t.name} takes ${dmg} physical damage`}]}const shots=4+Math.floor(Math.random()*3);const fx=[];let total=0;for(let i=0;i<shots;i++){const dmg=calcDamage(u,t,.5,'magic');total+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:`👟 Harrison Summon! Shoe ${i+1} → ${dmg}`})}fx.push({type:'text',text:`👟 Shoe Rain End! ${shots} shoes, total: ${total}`});return fx}},
@@ -945,9 +945,9 @@ const CHARS={
   vincent:{id:'vincent',name:'Vincent',rarity:'SR',gender:'male',role:'Offense',emoji:'💪',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'1級',jjkRankEn:'Grade 1',
     skills:{
-      skill1:{name:'Straight Punch',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'120% Physical Damage',
+      skill1:{name:'Straight Punch',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'120% Physical Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],1.2,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Vincent Straight Punch! → ${ts[0].name} takes ${dmg} physical damage`}]}},
-      skill2:{name:'Sweep Kick',type:'physical',targeting:'single_enemy',cost:2,tv:3,desc:'180% physical + fall debuff -20% ATK',
+      skill2:{name:'Sweep Kick',type:'physical',targeting:'single_enemy',cost:2,tv:2,desc:'180% physical + fall debuff -20% ATK',
         exec(u,ts){const t=ts[0];const dmg=calcDamage(u,t,1.8,'physical');return[{type:'damage',target:t.id,amount:dmg,text:`🦵 Sweep Kick! → ${t.name} takes ${dmg} physical damage!`},{type:'debuff',target:t.id,stat:'damage',val:-.2,dur:1,text:`🦵 ${t.name} swept down! ATK -20% next turn`}]}},
       skill3:{name:'Princess Carry',type:'physical',targeting:'single_enemy',cost:3,tv:4,desc:'160% physical, 85% chance throw for +40% bonus',
         exec(u,ts){const t=ts[0];const base=calcDamage(u,t,1.6,'physical');if(Math.random()<.85){const bonus=Math.floor(base*.40);const total=base+bonus;return[{type:'damage',target:t.id,amount:total,text:`💃 Princess Carry Slam! 160%+40% → ${t.name} takes ${total} damage!`}]}return[{type:'damage',target:t.id,amount:base,text:`🤲 Princess Carry! 160% → ${t.name} takes ${base} damage`}]}},
@@ -960,15 +960,15 @@ const CHARS={
   lucas:{id:'lucas',name:'Lucas',rarity:'SSR',gender:'male',role:'Offense / Debuff',emoji:'📊',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'1級',jjkRankEn:'Grade 1',
     skills:{
-      skill1:{name:'Exam Score 99%',type:'magic',targeting:'single_enemy',cost:1,tv:2,desc:'110% magic damage, +0.9 GPA',
+      skill1:{name:'Exam Score 99%',type:'magic',targeting:'single_enemy',cost:1,tv:1,desc:'110% magic damage, +0.9 GPA',
         exec(u,ts){u.gpa=(u.gpa||0)+.9;const dmg=calcDamage(u,ts[0],1.1,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`📝 Exam 99%! → ${ts[0].name} takes ${dmg} magic damage | Lucas GPA: ${u.gpa.toFixed(1)}`}]}},
-      skill2:{name:'AP Precal Pro Max',type:'buff',targeting:'self',cost:2,tv:3,desc:'ATK boost scaled by GPA × turn count formula',
+      skill2:{name:'AP Precal Pro Max',type:'buff',targeting:'self',cost:2,tv:2,desc:'ATK boost scaled by GPA × turn count formula',
         exec(u){const bonus=Math.min(1.5,((u.hp/200)+(u.gpa||0)*3*(u.turnCount||1))*.08);return[{type:'buff',target:u.id,stat:'damage',val:bonus,dur:2,text:`📐 Precal boost! ATK +${(bonus*100).toFixed(0)}% (GPA:${(u.gpa||0).toFixed(1)} × turn ${u.turnCount||1}), 2 turns`}]}},
       skill3:{name:'COD Punishment',type:'mixed',targeting:'all_enemies',cost:3,tv:4,desc:'All 150% physical + DoT 50% magic ×3 turns + random stun',
         exec(u,ts){const fx=[];ts.forEach(t=>{const dmg=calcDamage(u,t,1.5,'physical');fx.push({type:'damage',target:t.id,amount:dmg,text:`🎮 ${t.name} caught playing COD! 150% physical → ${dmg} damage`});fx.push({type:'dot',target:t.id,amount:calcDamage(u,t,.5,'magic'),dur:3,text:`🎮 ${t.name} COD punishment DoT! 3 turns`})});const st=ts[Math.floor(Math.random()*ts.length)];fx.push({type:'stun',target:st.id,dur:1,text:`😵 ${st.name} lost too hard! Stunned 1 turn`});return fx}},
       // NERFED: Arcaea ult - no more insta-kill tier, max damage capped at 60% current HP, scores shifted harder to get
       ultimate:{name:'Domain Expansion: Arcaea',targeting:'all_enemies',desc:'Score-based damage, max 60% current HP per target',
-        exec(u,ts){return ts.map(t=>{const s=Math.random()*100*2221;let dmg=0,txt='';if(s<9000000){dmg=Math.floor(t.hp*.60);txt=`💀 EX(${Math.floor(s/10000)})! 60% current HP!`}else if(s<9400000){dmg=Math.floor(t.hp*.40);txt=`😱 AA+(${Math.floor(s/10000)})! 40% current HP!`}else if(s<9700000){dmg=Math.floor(t.hp*.25);txt=`😨 AA(${Math.floor(s/10000)})! 25% current HP!`}else if(s<9900000){dmg=Math.floor(t.hp*.15);txt=`😰 A(${Math.floor(s/10000)})! 15% current HP!`}else if(s<10001000){dmg=Math.floor(t.hp*.08);txt=`😅 B(${Math.floor(s/10000)})! 8% current HP!`}else{txt=`✅ PM(${Math.floor(s/10000)})! Perfect Memory! No damage!`}return dmg>0?{type:'truedamage',target:t.id,amount:dmg,text:`🎵 Arcaea Judgment → ${t.name}: ${txt} (${dmg} true dmg)`}:{type:'text',text:`🎵 Arcaea → ${t.name}: ${txt}`}})}}
+        exec(u,ts){return ts.map(t=>{const s=Math.random()*10002000;let dmg=0,txt='';if(s<9000000){dmg=Math.floor(t.hp*.60);txt=`💀 EX(${Math.floor(s/10000)})! 60% current HP!`}else if(s<9400000){dmg=Math.floor(t.hp*.40);txt=`😱 AA+(${Math.floor(s/10000)})! 40% current HP!`}else if(s<9700000){dmg=Math.floor(t.hp*.25);txt=`😨 AA(${Math.floor(s/10000)})! 25% current HP!`}else if(s<9900000){dmg=Math.floor(t.hp*.15);txt=`😰 A(${Math.floor(s/10000)})! 15% current HP!`}else if(s<10001000){dmg=Math.floor(t.hp*.08);txt=`😅 B(${Math.floor(s/10000)})! 8% current HP!`}else{txt=`✅ PM(${Math.floor(s/10000)})! Perfect Memory! No damage!`}return dmg>0?{type:'truedamage',target:t.id,amount:dmg,text:`🎵 Arcaea Judgment → ${t.name}: ${txt} (${dmg} true dmg)`}:{type:'text',text:`🎵 Arcaea → ${t.name}: ${txt}`}})}}
     }
   },
 
@@ -981,7 +981,7 @@ const CHARS={
     jjkRank:'準特1級',jjkRankEn:'Semi-Special Grade',
     harrisonGuarantee:true,
     skills:{
-      skill1:{name:'Quick Pull-Up Jumper',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'95% hit chance, 120% physical, on hit +1 stamina',
+      skill1:{name:'Quick Pull-Up Jumper',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'95% hit chance, 120% physical, on hit +1 stamina  [+1 TV]',
         exec(u,ts){if(Math.random()<.95){const dmg=calcDamage(u,ts[0],1.2,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🏀 Quick Pull-Up Jumper! → ${ts[0].name} takes ${dmg} physical damage`},{type:'stamina',target:u.id,amount:1,text:'🏀 Hit! Harrison +1 stamina'}]}return[{type:'text',text:'😬 Jumper missed...'}]}},
       skill2:{name:'Full-Court Stat Theft',type:'special',targeting:'all_enemies',cost:3,tv:3,desc:'Steal 3% ATK & HP from ALL enemies, all stacked onto Harrison only',
         exec(u,ts,all){
@@ -1007,7 +1007,7 @@ const CHARS={
       skill3:{name:'Shoe Parade',type:'special',targeting:'all_enemies',cost:3,tv:4,desc:'All enemies 15% true damage, stun 2 targets',
         exec(u,ts){const fx=ts.map(t=>{const td=Math.floor(t.hp*.15);return{type:'truedamage',target:t.id,amount:td,text:`👟 ${t.name} hit by shoe! 15% true damage → ${td}`}});const stunTargets=[...ts].sort(()=>Math.random()-.5).slice(0,Math.min(2,ts.length));stunTargets.forEach(t=>fx.push({type:'stun',target:t.id,dur:1,text:`👟 ${t.name} knocked out by shoe! Stunned 1 turn!`}));return fx}},
       ultimate:{name:'Iron Blood Elbow',targeting:'single_enemy',desc:'Guaranteed stun 1-2 turns + 150% physical, 65% chain for 220%',
-        exec(u,ts){const t=ts[0];const fx=[];const stunDur=Math.random()<.5?2:1;fx.push({type:'stun',target:t.id,dur:stunDur,text:`💪 Iron Elbow Stun! → ${t.name} stunned ${stunDur} turn(s)!`});const dmg1=calcDamage(u,t,1.5,'physical');fx.push({type:'damage',target:t.id,amount:dmg1,text:`💪 Iron Blood Elbow! → ${t.name} takes ${dmg1} physical damage`});if(Math.random()<.65){const dmg2=calcDamage(u,t,2.2,'physical');fx.push({type:'damage',target:t.id,amount:dmg2,text:`🔥 Chain trigger! 220% follow-up → ${t.name} takes another ${dmg2} damage!`});fx.push({type:'text',text:`🔥 Iron Elbow Double Hit! Total damage: ${dmg1+dmg2}`})}return fx}}
+        exec(u,ts){const t=ts[0];const fx=[];const stunDur=Math.random()<.5?2:1;fx.push({type:'stun',target:t.id,dur:stunDur,text:`💪 Iron Elbow Stun! → ${t.name} stunned ${stunDur} turn(s)!`});const dmg1=calcDamage(u,t,1.5,'physical');fx.push({type:'damage',target:t.id,amount:dmg1,text:`💪 Iron Blood Elbow! → ${t.name} takes ${dmg1} physical damage`});if(Math.random()<.80){const dmg2=calcDamage(u,t,2.2,'physical');fx.push({type:'damage',target:t.id,amount:dmg2,text:`🔥 Chain trigger! 220% follow-up → ${t.name} takes another ${dmg2} damage!`});fx.push({type:'text',text:`🔥 Iron Elbow Double Hit! Total damage: ${dmg1+dmg2}`})}return fx}}
     },
     reminisce:{name:'The Pain of Being Betrayed',desc:'ATK +80%, physical +50%, +4 stamina, 2 turns',exec(u){return[{type:'buff',target:u.id,stat:'damage',val:.80,dur:2,text:'💚 Betrayal Boost! ATK +80%, 2 turns!'},{type:'buff',target:u.id,stat:'physicalDamage',val:.50,dur:2,text:'💚 Physical +50%, 2 turns!'},{type:'stamina',target:u.id,amount:4,text:'💚 Harrison +4 stamina!'}]}}
   },
@@ -1015,9 +1015,9 @@ const CHARS={
   cici:{id:'cici',name:'Cici',rarity:'SR',gender:'female',role:'Debuffer',emoji:'🧠',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'2級',jjkRankEn:'Grade 2',
     skills:{
-      skill1:{name:'Backhand Punch',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'80% Physical Damage',
+      skill1:{name:'Backhand Punch',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'80% Physical Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],.8,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Cici Backhand! → ${ts[0].name} takes ${dmg} physical damage`}]}},
-      skill2:{name:'10,000 IQ Strike',type:'control',targeting:'single_enemy',cost:2,tv:3,desc:'Stun + steal 1 stamina + ATK -15%',
+      skill2:{name:'10,000 IQ Strike',type:'control',targeting:'single_enemy',cost:2,tv:2,desc:'Stun + steal 1 stamina + ATK -15%',
         exec(u,ts){const t=ts[0];return[{type:'stun',target:t.id,dur:1,text:`🧠 10,000 IQ Strike! → ${t.name} stunned 1 turn!`},{type:'stealStamina',from:t.id,to:u.id,amount:1,text:`🧠 Cici steals 1 stamina from ${t.name}!`},{type:'debuff',target:t.id,stat:'damage',val:-.15,dur:2,text:`🧠 ${t.name} ATK -15%, 2 turns`}]}},
       skill3:{name:'Cici Combo',type:'physical',targeting:'single_enemy',cost:3,tv:4,desc:'7-hit combo, stun 2 turns on full hit',
         exec(u,ts){const t=ts[0];const fx=[];let total=0;for(let i=0;i<7;i++){const p=Math.random()<.6;const dmg=calcDamage(u,t,p?.30:.50,'physical');total+=dmg;fx.push({type:'damage',target:t.id,amount:dmg,text:`${p?'👊':'🦵'} Hit ${i+1}! → ${dmg}`})}fx.push({type:'stun',target:t.id,dur:2,text:`💫 Cici 7-Hit Combo! All hit! → ${t.name} stunned 2 turns! Total: ${total}`});return fx}},
@@ -1030,9 +1030,9 @@ const CHARS={
   charlotte:{id:'charlotte',name:'Charlotte',rarity:'SR',gender:'female',role:'Support',emoji:'💖',maxHp:1200,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'2級',jjkRankEn:'Grade 2',
     skills:{
-      skill1:{name:'Skill Copy',type:'buff',targeting:'single_ally',cost:1,tv:2,desc:'Target ally +25% ATK 2 turns + 1 stamina',
+      skill1:{name:'Skill Copy',type:'buff',targeting:'single_ally',cost:1,tv:1,desc:'Target ally +25% ATK 2 turns + 1 stamina',
         exec(u,ts,all,al){const tgt=ts[0]||al[0];if(!tgt)return[];return[{type:'buff',target:tgt.id,stat:'damage',val:.25,dur:2,text:`🔄 Charlotte Skill Copy → ${tgt.name} ATK +25%, 2 turns!`},{type:'stamina',target:tgt.id,amount:1,text:`🔄 ${tgt.name} +1 stamina`}]}},
-      skill2:{name:'Attack Boost',type:'buff',targeting:'single_ally',cost:2,tv:3,desc:'Ally +30% ATK +15% magic, 2 turns',
+      skill2:{name:'Attack Boost',type:'buff',targeting:'single_ally',cost:2,tv:2,desc:'Ally +30% ATK +15% magic, 2 turns',
         exec(u,ts,all,al){const tgt=ts[0]||al[0];if(!tgt)return[];return[{type:'buff',target:tgt.id,stat:'damage',val:.30,dur:2,text:`✨ Charlotte boost → ${tgt.name} ATK +30%, 2 turns!`},{type:'buff',target:tgt.id,stat:'magicDamage',val:.15,dur:2,text:`✨ ${tgt.name} magic +15%, 2 turns!`}]}},
       skill3:{name:'Team Stamina Recovery',type:'buff',targeting:'all_allies',cost:2,tv:4,desc:'Full team (excl. self) +2 stamina +10% ATK',
         exec(u,ts,all,al){return al.filter(a=>a.id!==u.id).flatMap(a=>[{type:'stamina',target:a.id,amount:2,text:`💖 ${a.name} +2 stamina!`},{type:'buff',target:a.id,stat:'damage',val:.10,dur:2,text:`💖 ${a.name} ATK +10%, 2 turns`}])}},
@@ -1044,9 +1044,9 @@ const CHARS={
   lj:{id:'lj',name:'LJ',rarity:'SR',gender:'female',role:'Offense',emoji:'💬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'2級',jjkRankEn:'Grade 2',
     skills:{
-      skill1:{name:'Curse: Ah Hi Ya',type:'magic',targeting:'single_enemy',cost:1,tv:2,desc:'90% Magic Damage',
+      skill1:{name:'Curse: Ah Hi Ya',type:'magic',targeting:'single_enemy',cost:1,tv:1,desc:'90% Magic Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],.9,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`💬 Ah Hi Ya! → ${ts[0].name} takes ${dmg} magic damage`}]}},
-      skill2:{name:'Emo Warning',type:'magic',targeting:'single_enemy',cost:2,tv:3,desc:'3 curses at 35-60% each, guaranteed hit',
+      skill2:{name:'Emo Warning',type:'magic',targeting:'single_enemy',cost:2,tv:2,desc:'3 curses at 35-60% each, guaranteed hit',
         exec(u,ts){const t=ts[0];let total=0;const fx=[0,1,2].map(i=>{const m=.35+Math.random()*.25;const dmg=calcDamage(u,t,m,'magic');total+=dmg;return{type:'damage',target:t.id,amount:dmg,text:`😷 Curse ${i+1}: ${(m*100).toFixed(0)}% → ${t.name} takes ${dmg} magic damage`}});fx.push({type:'text',text:`😷 Emo Warning done! 3-curse total: ${total}`});return fx}},
       skill3:{name:'Power of Betrayal',type:'special',targeting:'single_enemy',cost:2,tv:4,desc:'Random ally -10% ATK, enemy hit by lightning 200%',
         exec(u,ts,all,al){const fx=[];if(al.length){const v=al[Math.floor(Math.random()*al.length)];fx.push({type:'debuff',target:v.id,stat:'damage',val:-.1,dur:1,text:`📸 LJ posted ${v.name}'s photo! ATK -10% next turn`})}const dmg=calcDamage(u,ts[0],2.0,'magic');fx.push({type:'damage',target:ts[0].id,amount:dmg,text:`⚡ Lightning Strike! 200% magic → ${ts[0].name} takes ${dmg} damage!`});return fx}},
@@ -1059,9 +1059,9 @@ const CHARS={
   michelle:{id:'michelle',name:'Michelle',rarity:'SSR',gender:'female',role:'Debuffer',emoji:'💰',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'準特1級',jjkRankEn:'Semi-Special Grade',
     skills:{
-      skill1:{name:'Math Genius',type:'control',targeting:'single_enemy',cost:1,tv:2,desc:'Confuse enemy, next turn limited to 1 skill',
+      skill1:{name:'Math Genius',type:'control',targeting:'single_enemy',cost:1,tv:1,desc:'Confuse enemy, next turn limited to 1 skill',
         exec(u,ts){const t=ts[0];return[{type:'debuff',target:t.id,stat:'damage',val:-.15,dur:1,text:`🧮 ${t.name} confused by math! ATK -15%!`},{type:'text',text:`🧮 ${t.name} limited to 1 skill next turn!`}]}},
-      skill2:{name:'Cash Power',type:'control',targeting:'single_enemy',cost:2,tv:3,desc:'Enemy defects for 1 turn + ATK -20%',
+      skill2:{name:'Cash Power',type:'control',targeting:'single_enemy',cost:2,tv:2,desc:'Enemy defects for 1 turn + ATK -20%',
         exec(u,ts){const t=ts[0];return[{type:'defect',target:t.id,dur:1,text:`💸 ${t.name} bought out with cash! Defects 1 turn!`},{type:'debuff',target:t.id,stat:'damage',val:-.20,dur:1,text:`💸 ${t.name} ATK -20% next turn`}]}},
       skill3:{name:'Figure Gift',type:'buff',targeting:'all_allies',cost:3,tv:4,desc:'Team +20% ATK +15% magic, 2 turns',
         exec(u,ts,all,al){return al.flatMap(a=>[{type:'buff',target:a.id,stat:'damage',val:.20,dur:2,text:`🎁 ${a.name} gets a figure! ATK +20%!`},{type:'buff',target:a.id,stat:'magicDamage',val:.15,dur:2,text:`🎁 ${a.name} magic +15%!`}])}},
@@ -1073,9 +1073,9 @@ const CHARS={
   trex:{id:'trex',name:'Trex',rarity:'SR',gender:'male',role:'Debuffer',emoji:'🔑',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'3級',jjkRankEn:'Grade 3',
     skills:{
-      skill1:{name:'Keychain Strike',type:'magic',targeting:'single_enemy',cost:1,tv:2,desc:'100% Magic Damage',
+      skill1:{name:'Keychain Strike',type:'magic',targeting:'single_enemy',cost:1,tv:1,desc:'100% Magic Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],1.0,'magic');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🔑 Keychain flung! → ${ts[0].name} takes ${dmg} magic damage`}]}},
-      skill2:{name:'Ring Control',type:'magic',targeting:'single_enemy',cost:2,tv:3,desc:'Triple 40% hits on target + ALL enemies trigger -2',
+      skill2:{name:'Ring Control',type:'magic',targeting:'single_enemy',cost:2,tv:2,desc:'Triple 40% hits on target + ALL enemies trigger -2',
         exec(u,ts,all){let total=0;const fx=[0,1,2].map(i=>{const dmg=calcDamage(u,ts[0],.4,'magic');total+=dmg;return{type:'damage',target:ts[0].id,amount:dmg,text:`🔑 Key ${i+1}! → ${ts[0].name} takes ${dmg}`}});const allEnemies=all.filter(c=>c.teamId!==u.teamId&&c.alive);allEnemies.forEach(t=>fx.push({type:'reduceTrigger',target:t.id,amount:2,text:`🔑 ${t.name} trigger -2! (Ring Control)`}));fx.push({type:'text',text:`🔑 Ring Control done! ${ts[0].name} hit 3x (${total} dmg), all enemies trigger -2`});return fx}},
       skill3:{name:'The Middleman Markup',type:'special',targeting:'all_enemies',cost:2,tv:4,desc:'Steal 3 stamina from highest stamina enemy, give 1 to lowest ally',
         exec(u,ts,all,al){const re=[...ts].sort((a,b)=>b.stamina-a.stamina)[0];const pa=[...al].sort((a,b)=>a.stamina-b.stamina)[0];const stolen=Math.min(3,re?.stamina||0);return[{type:'stealStamina',from:re?.id,to:u.id,amount:stolen,text:`💰 Stole ${stolen} stamina from ${re?.name}! Markup secured!`},{type:'stamina',target:pa?.id,amount:1,text:`💰 Passed 1 stamina to ${pa?.name}`}]}},
@@ -1088,9 +1088,9 @@ const CHARS={
   madame:{id:'madame',name:'Madame',rarity:'SSSR',gender:'female',role:'Offense / Debuff',emoji:'🥐',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'特級',jjkRankEn:'Special Grade',
     skills:{
-      skill1:{name:'Patate',type:'magic',targeting:'single_enemy',cost:1,tv:2,desc:'140% magic + Fries Mark (max 3 stacks)',
+      skill1:{name:'Patate',type:'magic',targeting:'single_enemy',cost:1,tv:1,desc:'140% magic + Fries Mark (max 3 stacks)',
         exec(u,ts){const t=ts[0];const stacks=(t.marks?.frites||0);const dmg=calcDamage(u,t,1.4,'magic');return[{type:'damage',target:t.id,amount:dmg,text:`🥔 Patate! 140% magic → ${t.name} takes ${dmg} damage (Fries: ${stacks} stacks)`},{type:'mark',target:t.id,mtype:'frites',stacks:1,max:3,text:`🍟 ${t.name} gets Fries Mark! (${stacks+1}/3 stacks)`}]}},
-      skill2:{name:"C'est parti mon kiki",type:'heal',targeting:'all_allies',cost:2,tv:3,desc:'Cleanse 3 debuffs for all allies, lowest HP gets 300 shield +20% heal',
+      skill2:{name:"C'est parti mon kiki",type:'heal',targeting:'all_allies',cost:2,tv:2,desc:'Cleanse 3 debuffs for all allies, lowest HP gets 300 shield +20% heal',
         exec(u,ts,all,al){const lo=[...al,u].sort((a,b)=>a.hp-b.hp)[0];const h=Math.floor(lo.maxHp*.20);return[...al.map(a=>({type:'cleanse',target:a.id,count:3,text:`✨ ${a.name} cleansed 3 debuffs!`})),{type:'cleanse',target:u.id,count:3},{type:'shield',target:lo.id,amount:300,text:`🥐 ${lo.name} gets Croissant Shield 300!`},{type:'heal',target:lo.id,amount:h,text:`🥐 ${lo.name} heals ${h} HP (20%)`}]}},
       skill3:{name:'Baguette',type:'mixed',targeting:'all_enemies',cost:3,tv:4,desc:'All enemies 150% physical, each Fries stack +8% true dmg + magic resist -25%',
         exec(u,ts){return ts.flatMap(t=>{const s=t.marks?.frites||0;const td=Math.floor(t.hp*.08*s);const dmg=calcDamage(u,t,1.5,'physical');const fx=[{type:'damage',target:t.id,amount:dmg,text:`🥖 Baguette! 150% physical → ${t.name} takes ${dmg} damage`}];if(td>0)fx.push({type:'truedamage',target:t.id,amount:td,text:`🍟 Fries ×${s} stacks true damage! → ${t.name} takes extra ${td} true damage`});fx.push({type:'debuff',target:t.id,stat:'magicResist',val:.25,dur:3,text:`🥖 ${t.name} magic resist -25%, 3 turns`});return fx})}},
@@ -1103,7 +1103,7 @@ const CHARS={
   feliz:{id:'feliz',name:'Feliz',rarity:'R',gender:'male',role:'Support',emoji:'🎬',maxHp:1000,baseDamage:100,maxStamina:8,startStamina:5,
     jjkRank:'3級',jjkRankEn:'Grade 3',
     skills:{
-      skill1:{name:'Punch',type:'physical',targeting:'single_enemy',cost:1,tv:2,desc:'85% Physical Damage',
+      skill1:{name:'Punch',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'85% Physical Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],.85,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`👊 Feliz punches! → ${ts[0].name} takes ${dmg} physical damage`}]}},
       skill2:{name:'YouTuber Aura',type:'buff',targeting:'single_ally',cost:1,tv:3,desc:'One ally takes 60% less damage, 2 turns',
         exec(u,ts,all,al){const tgt=ts[0]||al[0];if(!tgt)return[];return[{type:'buff',target:tgt.id,stat:'damageReduce',val:.60,dur:2,text:`📹 YouTuber Aura! → ${tgt.name} takes 60% less damage, 2 turns!`}]}},
@@ -1275,27 +1275,45 @@ const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id
     const en=this.enemies();if(!en.length)return null;
     const al=this.allies();
 
-    // Helper: get tids based on skill targeting
-    const getTids=(s,isUlt=false)=>{
+    // Helper: pick target based on skill targeting
+    const getTids=(s)=>{
       const tgt=s?.targeting||'single_enemy';
       if(tgt==='all_enemies')return en.map(e=>e.id);
       if(tgt==='all_allies')return al.map(a=>a.id);
       if(tgt==='self')return[actor.id];
-      if(tgt==='single_ally'){const lo=[...al].sort((a,b)=>a.hp-b.hp)[0];return[lo?.id||al[0]?.id];}
-      // single_enemy — pick weakest
-      const weak=[...en].sort((a,b)=>a.hp-b.hp)[0];return[weak.id];
+      if(tgt==='single_ally'){
+        // 80% heal lowest HP ally, 20% random ally
+        const pick=Math.random()<.80?[...al].sort((a,b)=>a.hp-b.hp)[0]:al[Math.floor(Math.random()*al.length)];
+        return[pick?.id||al[0]?.id];
+      }
+      // single_enemy — 75% weakest, 25% random (makes AI feel less robotic)
+      const target=Math.random()<.75
+        ?[...en].sort((a,b)=>a.hp-b.hp)[0]
+        :en[Math.floor(Math.random()*en.length)];
+      return[target.id];
     };
 
-    if(actor.tv>=10)return{atype:'ultimate',skey:null,tids:getTids(actor.skills?.ultimate,true)};
+    // Always use ultimate when ready
+    if(actor.tv>=10)return{atype:'ultimate',skey:null,tids:getTids(actor.skills?.ultimate)};
 
-    for(const sk of['skill3','skill2','skill1']){
-      const s=actor.skills?.[sk];if(!s)continue;
-      if(actor.stamina>=s.cost){
-        return{atype:'skill',skey:sk,tids:getTids(s)};
-      }
+    // Build list of affordable skills
+    const affordable=['skill3','skill2','skill1'].filter(k=>{
+      const s=actor.skills?.[k];return s&&actor.stamina>=s.cost;
+    });
+    if(!affordable.length){
+      // Can't afford anything — use skill1 anyway (engine handles it)
+      return{atype:'skill',skey:'skill1',tids:getTids(actor.skills?.skill1)};
     }
-    // fallback: skill1 even if short on stamina
-    return{atype:'skill',skey:'skill1',tids:getTids(actor.skills?.skill1)};
+
+    // 65% pick best (highest cost) skill, 35% pick randomly from affordable
+    // This makes AI beatable without feeling braindead
+    let chosen;
+    if(Math.random()<.65){
+      chosen=affordable[0]; // best skill (list is sorted sk3→sk1)
+    } else {
+      chosen=affordable[Math.floor(Math.random()*affordable.length)];
+    }
+    return{atype:'skill',skey:chosen,tids:getTids(actor.skills?.[chosen])};
   }
 }
 
