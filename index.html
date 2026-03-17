@@ -1373,16 +1373,18 @@ const G={
       if(ind){ind.textContent='🤖 AI IS PICKING...';ind.style.background='rgba(176,106,255,.15)';ind.style.color='var(--pur)';ind.style.borderColor='rgba(176,106,255,.3)';ind.classList.add('ai-thinking')}
       if(title)title.textContent='CHARACTER SELECT — AI THINKING';
     } else if(this.pickTurn===1){
-      if(ind){ind.classList.remove('ai-thinking');ind.textContent=`⚡ YOUR PICK  (${t1done}/4)`;ind.style.background='var(--c1d)';ind.style.color='var(--c1)';ind.style.borderColor='rgba(0,212,255,.3)'}
-      if(title)title.textContent=this.mode==='pve'?'DRAFT — YOUR TURN':'CHARACTER SELECT — TEAM 1';
+      const lbl=this.mode==='pve'?`⚡ YOUR PICK  (${t1done}/4)`:`⚡ PLAYER 1 PICKS  (${t1done}/4)`;
+      if(ind){ind.classList.remove('ai-thinking');ind.textContent=lbl;ind.style.background='var(--c1d)';ind.style.color='var(--c1)';ind.style.borderColor='rgba(0,212,255,.3)'}
+      if(title)title.textContent=this.mode==='pve'?'DRAFT — YOUR TURN':'DRAFT — PLAYER 1'S PICK';
     } else {
-      if(ind){ind.classList.remove('ai-thinking');ind.textContent=`🔥 TEAM 2 PICKS  (${t2done}/4)`;ind.style.background='var(--c2d)';ind.style.color='var(--c2)';ind.style.borderColor='rgba(255,85,0,.3)'}
-      if(title)title.textContent='CHARACTER SELECT — TEAM 2';
+      const lbl=this.mode==='pve'?`🤖 AI IS PICKING...  (${t2done}/4)`:`🔥 PLAYER 2 PICKS  (${t2done}/4)`;
+      if(ind){ind.classList.remove('ai-thinking');ind.textContent=lbl;ind.style.background='var(--c2d)';ind.style.color='var(--c2)';ind.style.borderColor='rgba(255,85,0,.3)'}
+      if(title)title.textContent=this.mode==='pve'?'DRAFT — AI THINKING':'DRAFT — PLAYER 2'S PICK';
     }
-    // Dim/lock the roster cards during AI turn or when it's not your turn in PVP
+    // Only lock the grid during AI draft animation (PVE only)
     const grid=document.getElementById('char-grid');
     if(grid){
-      const locked=this.aiPicking||(this.mode==='pvp'&&this.pickTurn===2&&this.t2.length<4);
+      const locked=this.aiPicking;
       grid.style.pointerEvents=locked?'none':'';
       grid.style.opacity=locked?'0.45':'1';
     }
