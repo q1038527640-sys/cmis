@@ -1393,11 +1393,11 @@ const G={
     } else if(this.pickTurn===1){
       const lbl=this.mode==='pve'?`⚡ YOUR PICK  (${t1done}/4)`:`⚡ PLAYER 1 PICKS  (${t1done}/4)`;
       if(ind){ind.classList.remove('ai-thinking');ind.textContent=lbl;ind.style.background='var(--c1d)';ind.style.color='var(--c1)';ind.style.borderColor='rgba(0,212,255,.3)'}
-      if(title)title.textContent=this.mode==='pve'?'DRAFT — YOUR TURN':'DRAFT — PLAYER 1'S PICK';
+      if(title)title.textContent=this.mode==='pve'?'DRAFT — YOUR TURN':'DRAFT — PLAYER 1 PICK';
     } else {
       const lbl=this.mode==='pve'?`🤖 AI IS PICKING...  (${t2done}/4)`:`🔥 PLAYER 2 PICKS  (${t2done}/4)`;
       if(ind){ind.classList.remove('ai-thinking');ind.textContent=lbl;ind.style.background='var(--c2d)';ind.style.color='var(--c2)';ind.style.borderColor='rgba(255,85,0,.3)'}
-      if(title)title.textContent=this.mode==='pve'?'DRAFT — AI THINKING':'DRAFT — PLAYER 2'S PICK';
+      if(title)title.textContent=this.mode==='pve'?'DRAFT — AI THINKING':'DRAFT — PLAYER 2 PICK';
     }
     // Only lock the grid during AI draft animation (PVE only)
     const grid=document.getElementById('char-grid');
