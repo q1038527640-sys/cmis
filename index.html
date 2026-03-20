@@ -723,6 +723,109 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* ── AI ULTIMATE INCOMING ── */
 @keyframes ultPulse{0%,100%{opacity:1;text-shadow:0 0 10px rgba(240,192,64,.6)}50%{opacity:.8;text-shadow:0 0 30px rgba(240,192,64,1)}}
 .ai-waiting[style*="var(--gold)"]{animation:ultPulse 0.8s ease-in-out infinite}
+
+/* ══════════════════════════════════════════
+   FEATURE 1: STATUS CHIPS ON FIGHTER CARDS
+   ══════════════════════════════════════════ */
+.f-status{
+  display:flex;flex-wrap:wrap;gap:3px;margin-top:4px;
+}
+.status-chip{
+  font-family:var(--fM);font-size:8.5px;font-weight:700;letter-spacing:.3px;
+  padding:1px 5px;border-radius:3px;white-space:nowrap;
+  display:inline-flex;align-items:center;gap:2px;
+}
+.chip-dur{opacity:.6;font-size:7.5px;margin-left:1px}
+.buff-chip{background:rgba(136,170,255,.18);color:#aaccff;border:1px solid rgba(136,170,255,.35)}
+.debuff-chip{background:rgba(255,100,50,.18);color:#ffaa77;border:1px solid rgba(255,100,50,.35)}
+.dot-chip{background:rgba(255,85,0,.18);color:#ff9966;border:1px solid rgba(255,85,0,.35)}
+.curse-chip{background:rgba(176,106,255,.18);color:#cc99ff;border:1px solid rgba(176,106,255,.35)}
+.shield-chip{background:rgba(0,212,255,.15);color:#88ddff;border:1px solid rgba(0,212,255,.3)}
+.stun-chip{background:rgba(240,192,64,.18);color:var(--gold);border:1px solid rgba(240,192,64,.4)}
+.mark-chip{background:rgba(240,192,64,.12);color:#ffe090;border:1px solid rgba(240,192,64,.3)}
+
+/* ══════════════════════════════════════════
+   FEATURE 2: CHAR PREVIEW MODAL
+   ══════════════════════════════════════════ */
+.preview-overlay{
+  display:none;position:fixed;inset:0;z-index:9000;
+  background:rgba(0,0,0,.75);backdrop-filter:blur(4px);
+  align-items:center;justify-content:center;
+}
+.preview-overlay.show{display:flex}
+.preview-modal{
+  background:var(--bg2);border:1px solid var(--rim2);border-radius:10px;
+  width:min(560px,95vw);max-height:85vh;overflow-y:auto;
+  position:relative;padding:24px;box-shadow:0 0 40px rgba(0,0,0,.8);
+}
+.preview-close{
+  position:absolute;top:12px;right:14px;background:none;border:none;
+  color:var(--txt2);font-size:18px;cursor:pointer;padding:4px 8px;
+  border-radius:4px;transition:color .15s;
+}
+.preview-close:hover{color:var(--red)}
+.prev-header{display:flex;gap:16px;align-items:flex-start;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid var(--rim)}
+.prev-emo{font-size:52px;line-height:1;flex-shrink:0}
+.prev-meta{flex:1;min-width:0}
+.prev-name{font-family:var(--fT);font-size:28px;letter-spacing:3px;color:#fff}
+.prev-stats{display:flex;gap:12px;margin-top:8px;flex-wrap:wrap}
+.prev-stats span{font-family:var(--fM);font-size:11px;color:var(--txt2)}
+.prev-skills{display:flex;flex-direction:column;gap:8px}
+.prev-skill{
+  background:var(--bg3);border:1px solid var(--rim);border-radius:6px;
+  padding:10px 12px;transition:border-color .15s;
+}
+.prev-skill:hover{border-color:var(--rim2)}
+.ult-skill{border-color:rgba(240,192,64,.25);background:rgba(240,192,64,.04)}
+.rem-skill{border-color:rgba(176,106,255,.25);background:rgba(176,106,255,.04)}
+.prev-sk-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:5px}
+.prev-sk-icon{font-family:var(--fM);font-size:14px;color:var(--txt2);flex-shrink:0}
+.prev-sk-name{font-family:var(--fU);font-size:14px;font-weight:700;color:#fff;flex:1}
+.prev-sk-tgt{font-family:var(--fM);font-size:9px;color:var(--c1);letter-spacing:1px;opacity:.8}
+.prev-sk-cost{font-family:var(--fM);font-size:9px;color:var(--gold);margin-left:auto;white-space:nowrap}
+.prev-sk-desc{font-family:var(--fU);font-size:12px;color:var(--txt2);line-height:1.5}
+.preview-footer{margin-top:16px;padding-top:14px;border-top:1px solid var(--rim);text-align:center}
+.prev-picked{font-family:var(--fM);font-size:12px;letter-spacing:2px;padding:6px 16px;border-radius:4px;display:inline-block}
+.t1col{color:var(--c1);background:var(--c1d)}
+.t2col{color:var(--c2);background:var(--c2d)}
+.card-preview-btn{
+  position:absolute;top:5px;right:5px;background:rgba(255,255,255,.08);
+  border:none;border-radius:3px;color:var(--txt2);font-size:11px;
+  padding:2px 5px;cursor:pointer;transition:all .15s;line-height:1;
+  opacity:0;
+}
+.char-card:hover .card-preview-btn{opacity:1}
+.card-preview-btn:hover{background:var(--c1d);color:var(--c1)}
+.char-card{position:relative} /* needed for absolute preview btn */
+
+/* ══════════════════════════════════════════
+   FEATURE 3: MATCH SUMMARY
+   ══════════════════════════════════════════ */
+.match-summary{
+  width:min(680px,95vw);margin:0 auto;
+}
+.sum-grid{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:12px;
+}
+@media(max-width:700px){.sum-grid{grid-template-columns:1fr}}
+.sum-section{
+  background:var(--bg2);border:1px solid var(--rim);border-radius:8px;padding:12px;
+}
+.sum-title{
+  font-family:var(--fM);font-size:10px;letter-spacing:3px;color:var(--txt2);
+  margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rim);
+}
+.sum-row{
+  display:flex;align-items:center;gap:6px;padding:3px 0;
+  font-family:var(--fU);font-size:12px;color:var(--txt);
+}
+.sum-order{font-family:var(--fM);font-size:10px;color:var(--txt3);width:24px;flex-shrink:0}
+.sum-val{margin-left:auto;font-family:var(--fM);font-size:10px;color:var(--txt2);white-space:nowrap}
+.sum-footer{
+  font-family:var(--fM);font-size:10px;letter-spacing:2px;
+  color:var(--txt3);text-align:center;margin-top:4px;
+}
+.sum-footer b{color:var(--txt2)}
 </style>
 </head>
 <body>
@@ -857,10 +960,11 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
      GAMEOVER SCREEN
      ══════════════════════════════════════════ -->
 <div id="gameover-screen" class="screen">
-  <div class="winner-gg">VICTORY</div>
+  <div class="winner-gg">BATTLE OVER</div>
   <div class="winner-text w1" id="winner-txt">TEAM 1 WINS</div>
   <div class="winner-sub" id="winner-sub">A Glorious Victory</div>
   <div class="winner-divider"></div>
+  <div class="match-summary" id="match-summary"></div>
   <div class="winner-btns">
     <button class="btn-fire" onclick="G.restart()">⚔ REMATCH</button>
     <button class="btn-ice" onclick="G.goTitle()">🏠 MAIN MENU</button>
@@ -1089,7 +1193,7 @@ const CHARS={
       skill2:{name:'Ring Control',type:'magic',targeting:'single_enemy',cost:2,tv:2,desc:'Triple 40% hits on target + ALL enemies trigger -2',
         exec(u,ts,all){let total=0;const fx=[0,1,2].map(i=>{const dmg=calcDamage(u,ts[0],.4,'magic');total+=dmg;return{type:'damage',target:ts[0].id,amount:dmg,text:`🔑 Key ${i+1}! → ${ts[0].name} takes ${dmg}`}});const allEnemies=all.filter(c=>c.teamId!==u.teamId&&c.alive);allEnemies.forEach(t=>fx.push({type:'reduceTrigger',target:t.id,amount:2,text:`🔑 ${t.name} trigger -2! (Ring Control)`}));fx.push({type:'text',text:`🔑 Ring Control done! ${ts[0].name} hit 3x (${total} dmg), all enemies trigger -2`});return fx}},
       skill3:{name:'The Middleman Markup',type:'special',targeting:'all_enemies',cost:2,tv:4,desc:'Steal 3 stamina from highest stamina enemy, give 1 to lowest ally',
-        exec(u,ts,all,al){const re=[...ts].sort((a,b)=>b.stamina-a.stamina)[0];const pa=[...al].sort((a,b)=>a.stamina-b.stamina)[0];const stolen=Math.min(3,re?.stamina||0);return[{type:'stealStamina',from:re?.id,to:u.id,amount:stolen,text:`💰 Stole ${stolen} stamina from ${re?.name}! Markup secured!`},{type:'stamina',target:pa?.id,amount:1,text:`💰 Passed 1 stamina to ${pa?.name}`}]}},
+        exec(u,ts,all,al){const re=[...ts].sort((a,b)=>b.stamina-a.stamina)[0];const pa=[...al].sort((a,b)=>a.stamina-b.stamina)[0];const stolen=Math.min(3,re?.stamina||0);const fx=[{type:'stealStamina',from:re?.id,to:u.id,amount:stolen,text:`💰 Stole ${stolen} stamina from ${re?.name}! Markup secured!`}];if(pa)fx.push({type:'stamina',target:pa.id,amount:1,text:`💰 Passed 1 stamina to ${pa.name}`});return fx}},
       ultimate:{name:'Keychain Rain',targeting:'all_enemies',desc:'3 rounds of keychain rain, 10-14 keys at 15% each, reduce all trigger values',
         exec(u,ts){const fx=[];let totalDmg=0;for(let r=0;r<3;r++){const c=10+Math.floor(Math.random()*5);let roundDmg=0;ts.forEach(t=>{for(let k=0;k<c;k++){const dmg=calcDamage(u,t,.15,'magic');roundDmg+=dmg;totalDmg+=dmg;fx.push({type:'damage',target:t.id,amount:dmg})}});fx.push({type:'text',text:`🌧️ Keychain Rain Round ${r+1}! ${c} keys → round damage: ${roundDmg}`})}ts.forEach(t=>fx.push({type:'reduceTrigger',target:t.id,amount:2,text:`🌧️ ${t.name} suppressed by the rain! Trigger -2`}));fx.push({type:'text',text:`🌧️ Keychain Rain End! Total damage: ${totalDmg}`});return fx}}
     },
@@ -1130,7 +1234,7 @@ const CHARS={
 // BATTLE ENGINE
 // ══════════════════════════════════════════════════════════════
 class Engine{
-  constructor(){this.t1=[];this.t2=[];this.cTeam=1;this.cIdx=0;this.round=0;this.log=[];this.state='SELECT'}
+  constructor(){this.t1=[];this.t2=[];this.cTeam=1;this.cIdx=0;this.round=0;this.log=[];this.state='SELECT';this.summary={kills:[],ultimates:[],dmgDealt:{}}}
   mkChar(tmpl,tid){
     const c={
       id:tmpl.id,name:tmpl.name,emoji:tmpl.emoji,rarity:tmpl.rarity,gender:tmpl.gender,role:tmpl.role,jjkRank:tmpl.jjkRank,jjkRankEn:tmpl.jjkRankEn,
@@ -1188,6 +1292,7 @@ class Engine{
       actor.tv=0; // reset after ultimate
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length)tgts.push(...enemies);
+      this.summary.ultimates.push({name:actor.name,ult:actor.skills.ultimate.name,round:this.round,teamId:actor.teamId});
       this.addLog(`━━ 💥 ${actor.name.toUpperCase()} UNLEASHES ULTIMATE: ${actor.skills.ultimate.name.toUpperCase()} ━━`,'ultimate');
       try{fx=actor.skills.ultimate.exec(actor,tgts,allC,allies)||[]}catch(e){console.error('Ultimate error:',e);fx=[]}
     }else if(atype==='reminisce'){
@@ -1196,10 +1301,13 @@ class Engine{
       this.addLog(`✨ ${actor.name} activates REMINISCE: ${actor.reminisce?.name}!`,'reminisce');
       try{fx=actor.reminisce?.exec(actor,this.cTeam===1?this.t1:this.t2,this.cTeam===1?this.t2:this.t1)||[]}catch(e){console.error('Reminisce error:',e);fx=[]}
     }
-    this.applyFx(fx);
-    const w=this.winner();
+    this._curActorName=actor.name;this.applyFx(fx);this._curActorName=null;
+    let w=this.winner();
     if(w){this.state='GAMEOVER';this.addLog(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`,'system');this.addLog(`🏆 TEAM ${w} WINS THE BATTLE!`,'system');return this.snap()}
     if(atype!=='reminisce')this.next();
+    // Check again after next() — a DoT or curse tick inside tickDots may have killed someone
+    w=this.winner();
+    if(w){this.state='GAMEOVER';this.addLog(`━━━━━━━━━━━━━━━━━━━━━━━━━━━`,'system');this.addLog(`🏆 TEAM ${w} WINS THE BATTLE!`,'system');}
     return this.snap();
   }
   applyFx(fx){
@@ -1223,7 +1331,7 @@ class Engine{
           if(loc==='head')dmg=Math.floor(dmg*1.5);
           const shielded=t.shield>0?Math.min(t.shield,Math.floor(dmg*.5)):0;
           if(shielded>0){t.shield-=shielded;dmg-=shielded;}
-          t.hp=Math.max(0,t.hp-dmg);
+          t.hp=Math.max(0,t.hp-dmg);if(this._curActorName)this.summary.dmgDealt[this._curActorName]=(this.summary.dmgDealt[this._curActorName]||0)+dmg;
           // Single clean log line: skill flavor text + actual numbers
           const headStr=loc==='head'?' 💥HEADSHOT':'';
           const shStr=shielded>0?` (🛡blocked ${shielded})`:'';
@@ -1242,8 +1350,9 @@ class Engine{
           if(t.hp<=0)this.kill(t);break;
         case'heal':{
           if(!t)break;
-          const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);
-          t.hp=Math.min(t.maxHp,t.hp+(f.amount||0));
+          const healAmt=f.amount||0;
+          const ov=Math.max(0,(t.hp+healAmt)-t.maxHp);
+          t.hp=Math.min(t.maxHp,t.hp+healAmt);
           if(ov>0){t.shield=(t.shield||0)+ov;}
           const healMsg=f.text?`${f.text}  →  ${t.hp}/${t.maxHp} HP${ov>0?` (+🛡${ov})`:''}`:
             ov>0?`💚 ${t.name} heals ${f.amount} HP  →  FULL, ${ov} overflow → 🛡shield`:
@@ -1322,7 +1431,7 @@ class Engine{
     }
   }
   loc(){const r=Math.random();if(r<.10)return'head';if(r<.15)return'dodge';if(r<.575)return'upper';return'legs'}
-  kill(c){c.alive=false;c.hp=0;this.addLog(`💀 ${c.name} has been ELIMINATED! [Team ${c.teamId}]`,'death')}
+  kill(c){if(!c.alive)return;c.alive=false;c.hp=0;this.summary.kills.push({name:c.name,teamId:c.teamId,round:this.round,emoji:c.emoji});this.addLog(`💀 ${c.name} has been ELIMINATED! [Team ${c.teamId}]`,'death')}
   next(){
     const team=this.cTeam===1?this.t1:this.t2;
     const actor=team[this.cIdx];
@@ -1362,10 +1471,13 @@ class Engine{
     });
   }
   winner(){const a=this.t1.some(c=>c.alive),b=this.t2.some(c=>c.alive);if(!a)return 2;if(!b)return 1;return null}
-  addLog(msg,type='info'){if(!msg)return;this.log.push({msg:String(msg),type:type||'info',r:this.round});if(this.log.length>300)this.log.shift()}
+  addLog(msg,type='info'){if(!msg)return;this.log.push({msg:String(msg),type:type||'info',r:this.round});if(this.log.length>300)this.log.splice(0,100)}
   aiAct(){
-    const actor=this.getCur();if(!actor)return null;
-    const en=this.enemies();if(!en.length)return null;
+    // Safety: if state is already GAMEOVER or no enemies, don't act
+    if(this.state==='GAMEOVER')return null;
+    const actor=this.getCur();if(!actor||!actor.alive)return null;
+    const en=this.enemies();
+    if(!en.length){this.state='GAMEOVER';return null;}
     const al=this.allies();
 
     // Helper: pick target based on skill targeting
@@ -1465,10 +1577,103 @@ const G={
     Object.values(CHARS).forEach(ch=>{
       const d=document.createElement('div');
       d.className=`char-card`;d.dataset.id=ch.id;d.dataset.jjk=ch.jjkRank;
-      d.innerHTML=`<span class="c-emo">${ch.emoji}</span><div class="c-name">${ch.name}</div><span class="jjk-rank jjk-${ch.jjkRank}">${ch.jjkRank}</span><span class="c-role">${ch.role}</span>`;
-      d.addEventListener('click',()=>this.pick(ch.id,d));
+      d.innerHTML=`
+        <span class="c-emo">${ch.emoji}</span>
+        <div class="c-name">${ch.name}</div>
+        <span class="jjk-rank jjk-${ch.jjkRank}">${ch.jjkRank}</span>
+        <span class="c-role">${ch.role}</span>
+        <button class="card-preview-btn" title="View skills">👁</button>`;
+      // Main click = pick; preview button = show skill breakdown
+      d.addEventListener('click',(e)=>{
+        if(e.target.classList.contains('card-preview-btn'))return;
+        this.pick(ch.id,d);
+      });
+      d.querySelector('.card-preview-btn').addEventListener('click',(e)=>{
+        e.stopPropagation();
+        this.showPreview(ch.id);
+      });
       g.appendChild(d);
     });
+  },
+
+  showPreview(id){
+    const ch=CHARS[id];if(!ch)return;
+    const overlay=document.getElementById('char-preview-overlay');
+    const content=document.getElementById('preview-content');
+    const footer=document.getElementById('preview-footer');
+    if(!overlay||!content)return;
+    const tgtLabel={single_enemy:'→ 1 Enemy',all_enemies:'→ All Enemies',single_ally:'→ 1 Ally',all_allies:'→ All Allies',self:'→ Self'};
+    const mkSkill=(key,icon,s)=>{
+      if(!s)return'';
+      const tgt=tgtLabel[s.targeting]||'→ Target';
+      return`<div class="prev-skill">
+        <div class="prev-sk-head">
+          <span class="prev-sk-icon">${icon}</span>
+          <span class="prev-sk-name">${s.name}</span>
+          <span class="prev-sk-tgt">${tgt}</span>
+          <span class="prev-sk-cost">⚡${s.cost} · +${s.tv}TV</span>
+        </div>
+        <div class="prev-sk-desc">${s.desc||''}</div>
+      </div>`;
+    };
+    const sks=ch.skills||{};
+    const remHtml=ch.reminisce?`<div class="prev-skill rem-skill">
+      <div class="prev-sk-head">
+        <span class="prev-sk-icon">💫</span>
+        <span class="prev-sk-name">REMINISCE: ${ch.reminisce.name}</span>
+        <span class="prev-sk-cost">Once/battle</span>
+      </div>
+      <div class="prev-sk-desc">${ch.reminisce.desc||''}</div>
+    </div>`:'';
+    const ultHtml=sks.ultimate?`<div class="prev-skill ult-skill">
+      <div class="prev-sk-head">
+        <span class="prev-sk-icon">💥</span>
+        <span class="prev-sk-name">ULTIMATE: ${sks.ultimate.name}</span>
+        <span class="prev-sk-tgt">${tgtLabel[sks.ultimate.targeting]||'→ Target'}</span>
+        <span class="prev-sk-cost">TV×10</span>
+      </div>
+      <div class="prev-sk-desc">${sks.ultimate.desc||''}</div>
+    </div>`:'';
+    content.innerHTML=`
+      <div class="prev-header">
+        <div class="prev-emo">${ch.emoji}</div>
+        <div class="prev-meta">
+          <div class="prev-name">${ch.name}</div>
+          <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:4px">
+            <span class="jjk-rank jjk-${ch.jjkRank}">${ch.jjkRank} — ${ch.jjkRankEn||''}</span>
+            <span style="color:var(--txt2);font-size:12px">${ch.role}</span>
+          </div>
+          <div class="prev-stats">
+            <span>❤️ ${ch.maxHp} HP</span>
+            <span>⚡ ${ch.maxStamina} max SP</span>
+            <span>💥 ${ch.baseDamage||100} base dmg</span>
+          </div>
+        </div>
+      </div>
+      <div class="prev-skills">
+        ${mkSkill('skill1','①',sks.skill1)}
+        ${mkSkill('skill2','②',sks.skill2)}
+        ${mkSkill('skill3','③',sks.skill3)}
+        ${ultHtml}
+        ${remHtml}
+      </div>`;
+    // Footer: pick button or already picked indicator
+    const inT1=this.t1.includes(id), inT2=this.t2.includes(id);
+    if(inT1) footer.innerHTML=`<span class="prev-picked t1col">✓ Picked by Team 1</span>`;
+    else if(inT2) footer.innerHTML=`<span class="prev-picked t2col">✓ Picked by Team 2</span>`;
+    else footer.innerHTML=`<button class="btn-fire" style="font-size:14px;padding:8px 28px" onclick="G.pickFromPreview('${id}')">⚡ PICK THIS FIGHTER</button>`;
+    overlay.classList.add('show');
+  },
+
+  pickFromPreview(id){
+    const card=document.querySelector(`.char-card[data-id="${id}"]`);
+    if(card)this.pick(id,card);
+    this.closePreview();
+  },
+
+  closePreview(e){
+    if(e&&e.target!==document.getElementById('char-preview-overlay'))return;
+    document.getElementById('char-preview-overlay')?.classList.remove('show');
   },
 
   updPickTurnUI(){
@@ -1678,7 +1883,7 @@ const G={
     this.renderLog(st.log);
     this.updHud(st);
     if(st.state==='GAMEOVER'){setTimeout(()=>this.gameOver(st.winner),1200);return}
-    if(this.mode==='pve'&&st.cTeam===2&&st.state==='BATTLE')this.aiTurn();
+    if(this.mode==='pve'&&st.cTeam===2&&st.state==='BATTLE'&&st.cChar&&this.eng.enemies().length)this.aiTurn();
   },
 
   renderTeam(key,team,cur){
@@ -1687,19 +1892,42 @@ const G={
       const act=cur&&ch.id===cur.id;
       const pct=Math.max(0,ch.hp/ch.maxHp*100);
       const hc=pct>50?'var(--grn)':pct>25?'var(--gold)':'var(--red)';
-      const badges=[ch.stunned?'😵':'',ch.shield>0?'🛡':'',ch.buffs.some(b=>b.value>0)?'⬆':'',ch.debuffs.length?'⬇':'',ch.dots.length?'☠':'',ch.curses.length?'📖':''].filter(Boolean).join('');
+      // ── Build detailed status chips ──
+      const chips=[];
+      if(ch.stunned) chips.push(`<span class="status-chip stun-chip">😵 STUN ${ch.stunDur}t</span>`);
+      (ch.buffs||[]).forEach(b=>{
+        if(b.value<=0)return;
+        const icons={damage:'⬆ATK',magicDamage:'✨MAG',physicalDamage:'💪PHY',damageReduce:'🛡DEF',accuracy:'🎯ACC'};
+        chips.push(`<span class="status-chip buff-chip">${icons[b.stat]||'⬆'+b.stat} +${Math.round(b.value*100)}% <span class="chip-dur">${b.duration}t</span></span>`);
+      });
+      (ch.debuffs||[]).forEach(d=>{
+        if(d.value>=0)return;
+        const icons={damage:'⬇ATK',magicResist:'📉RES'};
+        chips.push(`<span class="status-chip debuff-chip">${icons[d.stat]||'⬇'+d.stat} ${Math.round(d.value*100)}% <span class="chip-dur">${d.duration}t</span></span>`);
+      });
+      (ch.dots||[]).forEach(dot=>{
+        chips.push(`<span class="status-chip dot-chip">☠BLEED ${dot.amount}/t <span class="chip-dur">${dot.duration}t</span></span>`);
+      });
+      (ch.curses||[]).forEach(cu=>{
+        chips.push(`<span class="status-chip curse-chip">📖CURSE ${Math.round(cu.skipChance*100)}% <span class="chip-dur">${cu.duration}t</span></span>`);
+      });
+      if(ch.shield>0) chips.push(`<span class="status-chip shield-chip">🛡${ch.shield}</span>`);
+      // Fries marks
+      if(ch.marks?.frites) chips.push(`<span class="status-chip mark-chip">🍟×${ch.marks.frites}</span>`);
+      const statusHtml=chips.length?`<div class="f-status">${chips.join('')}</div>`:'';
       const d=document.createElement('div');
-      d.className=`fighter${act?' active':''}${!ch.alive?' dead':''}${ch.stunned?' stunned-f':''}${key==='t2'?' hover-target':''}`;
+      d.className=`fighter${act?' active':''}${!ch.alive?' dead':''}${ch.stunned?' stunned-f':''}`;
       d.dataset.id=ch.id;
       d.innerHTML=`
         <div class="f-emo">${ch.alive?ch.emoji:'💀'}</div>
         <div class="f-info">
-          <div class="f-name-row"><span class="f-name">${ch.name}</span><span class="jjk-rank jjk-${ch.jjkRank||'3級'}">${ch.jjkRank||'3級'}</span><span class="f-badges">${badges}</span></div>
+          <div class="f-name-row"><span class="f-name">${ch.name}</span><span class="jjk-rank jjk-${ch.jjkRank||'3級'}">${ch.jjkRank||'3級'}</span></div>
           <div class="f-hp-wrap">
             <div class="f-hp-track"><div class="f-hp-fill" style="width:${pct}%;background:${hc}"></div></div>
-            <div class="f-hp-num">${ch.hp}/${ch.maxHp}${ch.shield>0?` 🛡${ch.shield}`:''}</div>
+            <div class="f-hp-num">${ch.hp}/${ch.maxHp}</div>
           </div>
           <div class="f-stam">${Array(ch.maxStamina).fill(0).map((_,i)=>`<div class="sp${i<ch.stamina?' on':''}${ch.stamina<=2&&i<ch.stamina?' low':ch.stamina<=4&&i<ch.stamina?' warn':''}"></div>`).join('')}</div>
+          ${statusHtml}
         </div>
         <div class="f-meta"><div class="f-trigger${ch.tv>=10?' ult-ready':''}">${ch.tv>=10?'💥':'⚡'}${ch.tv}/10</div></div>`;
       if(ch.alive){
@@ -1946,6 +2174,35 @@ const G={
     wt.className=`winner-text w${w}`;
     wt.textContent=`TEAM ${w} WINS`;
     ws.textContent=w===1?'🏆 A Glorious Victory!':'🏆 Comeback Victory!';
+    // Build match summary
+    const sm=document.getElementById('match-summary');
+    if(sm){
+      const sum=this.eng.summary;
+      const rounds=this.eng.round;
+      // Damage leaders
+      const dmgEntries=Object.entries(sum.dmgDealt||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
+      const dmgHtml=dmgEntries.map(([n,d])=>`<div class="sum-row"><span>${n}</span><span class="sum-val">${d.toLocaleString()} dmg</span></div>`).join('');
+      // Elimination order
+      const killHtml=sum.kills.map((k,i)=>`<div class="sum-row"><span class="sum-order">#${i+1}</span><span>${k.emoji} ${k.name}</span><span class="sum-val ${k.teamId===1?'t1col':'t2col'}">Team ${k.teamId} · R${k.round}</span></div>`).join('');
+      // Ultimates fired
+      const ultHtml=sum.ultimates.map(u=>`<div class="sum-row"><span class="sum-order">R${u.round}</span><span>${u.name}</span><span class="sum-val">${u.ult}</span></div>`).join('') || '<div class="sum-row" style="opacity:.4">No ultimates fired</div>';
+      sm.innerHTML=`
+        <div class="sum-grid">
+          <div class="sum-section">
+            <div class="sum-title">⚔ DAMAGE LEADERS</div>
+            ${dmgHtml||'<div class="sum-row" style="opacity:.4">No data</div>'}
+          </div>
+          <div class="sum-section">
+            <div class="sum-title">💀 ELIMINATION ORDER</div>
+            ${killHtml||'<div class="sum-row" style="opacity:.4">No eliminations</div>'}
+          </div>
+          <div class="sum-section">
+            <div class="sum-title">💥 ULTIMATES FIRED</div>
+            ${ultHtml}
+          </div>
+        </div>
+        <div class="sum-footer">Battle lasted <b>${rounds}</b> round${rounds!==1?'s':''} · ${sum.kills.length} eliminations · ${sum.ultimates.length} ultimates</div>`;
+    }
   },
 
   restart(){
@@ -1959,5 +2216,16 @@ document.addEventListener('DOMContentLoaded',()=>{
   // Pre-build roster so it's ready when select screen opens
 });
 </script>
+
+<!-- ══════════════════════════════════════════
+     CHAR PREVIEW MODAL
+     ══════════════════════════════════════════ -->
+<div id="char-preview-overlay" class="preview-overlay" onclick="G.closePreview(event)">
+  <div class="preview-modal" id="char-preview-modal">
+    <button class="preview-close" onclick="G.closePreview()">✕</button>
+    <div id="preview-content"></div>
+    <div class="preview-footer" id="preview-footer"></div>
+  </div>
+</div>
 </body>
 </html>
