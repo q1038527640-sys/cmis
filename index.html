@@ -570,6 +570,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .log-entry.warning{border-left-color:var(--gold);color:var(--gold)}
 .log-entry.info{color:var(--txt2)}
 .log-entry.return{border-left-color:var(--grn);color:var(--grn)}
+.log-entry.buff{border-left-color:#88aaff;color:#aaccff}
+.log-entry.debuff{border-left-color:#ff8844;color:#ffaa77}
+.log-entry.mark{border-left-color:#ffcc44;color:#ffe088}
+.log-entry.buff{border-left-color:#88aaff;color:#aaccff}
+.log-entry.debuff{border-left-color:#ff6622;color:#ffaa66}
+.log-entry.text{color:var(--txt2);font-size:10.5px;font-style:italic}
+.log-entry.info{color:var(--txt2);font-size:10.5px}
 .log-entry.turnhead{
   color:var(--txt);font-size:11px;letter-spacing:.5px;
   padding:5px 7px 3px;margin-top:2px;
@@ -712,6 +719,10 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .log-entry.system{font-weight:600}
 
 .sk-tgt-lbl{font-size:9px;letter-spacing:1px;opacity:.55;font-family:var(--fM);margin-left:5px;vertical-align:middle}
+
+/* ── AI ULTIMATE INCOMING ── */
+@keyframes ultPulse{0%,100%{opacity:1;text-shadow:0 0 10px rgba(240,192,64,.6)}50%{opacity:.8;text-shadow:0 0 30px rgba(240,192,64,1)}}
+.ai-waiting[style*="var(--gold)"]{animation:ultPulse 0.8s ease-in-out infinite}
 </style>
 </head>
 <body>
@@ -1167,7 +1178,7 @@ class Engine{
       if(!sk)return this.snap();
       if(actor.stamina<sk.cost){this.addLog(`⚠️ ${actor.name} not enough stamina!`,'warning');return this.snap()}
       actor.stamina=Math.max(0,actor.stamina-sk.cost);
-      if(sk.tv){actor.tv=Math.min(10,actor.tv+sk.tv);if(actor.tv>=10)this.addLog(`💥 ${actor.name} ULTIMATE READY!`,'system');}
+      if(sk.tv){const prevTv=actor.tv;actor.tv=Math.min(10,actor.tv+sk.tv);if(actor.tv>=10&&prevTv<10)this.addLog(`💥 ${actor.name} ULTIMATE READY! (TV full)  [${sk.name} +${sk.tv}]`,'system');}
       const tgts=tids.map(id=>allC.find(c=>c.id===id)).filter(Boolean);
       if(!tgts.length&&enemies.length)tgts.push(enemies[0]);
       this.addLog(`🔥 ${actor.name} uses ${sk.name}  [${sk.type?.toUpperCase()||'SKILL'} · costs ${sk.cost}⚡]`,'action');
@@ -1197,34 +1208,116 @@ class Engine{
     for(const f of fx){
       if(!f)continue;
       const t=all.find(c=>c.id===f.target);
-      if(f.text)this.addLog(f.text,f.type||'info');
+      // Only log f.text for types that DON'T have a dedicated log in their case handler
+      // (damage/truedamage/heal/shield/stun/buff/debuff/stamina all log from their handler)
+      // Only top-level log for plain 'text' fx and unknown types — all other types log from their case handler
+      if(f.text&&(f.type==='text'||!f.type||f.type==='info')){
+        this.addLog(f.text,f.type||'info');
+      }
       if(!t&&f.type!=='text')continue;
       switch(f.type){
         case'damage':{
           if(!t)break;
           const loc=this.loc();let dmg=f.amount||0;
-          if(loc==='head')dmg=Math.floor(dmg*1.5);
           if(loc==='dodge'){this.addLog(`💨 ${t.name} dodges!`,'dodge');break}
-          if(t.shield>0){const ab=Math.min(t.shield,Math.floor(dmg*.5));t.shield-=ab;dmg-=ab}
+          if(loc==='head')dmg=Math.floor(dmg*1.5);
+          const shielded=t.shield>0?Math.min(t.shield,Math.floor(dmg*.5)):0;
+          if(shielded>0){t.shield-=shielded;dmg-=shielded;}
           t.hp=Math.max(0,t.hp-dmg);
-          this.addLog(`💢 ${t.name} takes ${dmg} damage${loc==='head'?' 💥 HEADSHOT':''}  →  ${t.hp}/${t.maxHp} HP`,'damage');
+          // Single clean log line: skill flavor text + actual numbers
+          const headStr=loc==='head'?' 💥HEADSHOT':'';
+          const shStr=shielded>0?` (🛡blocked ${shielded})`:'';
+          if(f.text){
+            // Show skill flavor + actual damage (may differ from text if headshot/shield)
+            this.addLog(`${f.text}${loc==='head'?` 💥HEADSHOT → actually ${dmg}`:shielded>0?` (${shielded} blocked → ${dmg})`:``}  |  ${t.hp}/${t.maxHp} HP left`,'damage');
+          } else {
+            this.addLog(`💢 ${t.name} takes ${dmg} dmg${headStr}${shStr}  →  ${t.hp}/${t.maxHp} HP`,'damage');
+          }
           if(t.hp<=0)this.kill(t);break}
-        case'truedamage':if(!t)break;t.hp=Math.max(0,t.hp-(f.amount||0));this.addLog(`⚡ ${t.name} takes ${f.amount||0} TRUE damage  →  ${t.hp}/${t.maxHp} HP`,'truedamage');if(t.hp<=0)this.kill(t);break;
-        case'heal':{if(!t)break;const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);t.hp=Math.min(t.maxHp+ov,t.hp+(f.amount||0));if(ov>0){t.shield+=ov;this.addLog(`💚 ${t.name} heals ${f.amount} HP  →  FULL + ${ov} overflow → shield (🛡${t.shield} total)`,'heal')}else this.addLog(`💚 ${t.name} heals ${f.amount} HP  →  ${t.hp}/${t.maxHp} HP`,'heal');break}
-        case'shield':if(!t)break;t.shield=(t.shield||0)+(f.amount||0);this.addLog(`🛡 ${t.name} gains ${f.amount} shield  →  🛡${t.shield} total`,'shield');break;
-        case'stun':if(!t)break;t.stunned=true;t.stunDur=(f.dur||f.duration||1);this.addLog(`😵 ${t.name} is STUNNED for ${t.stunDur} turn(s)!`,'stun');break;
-        case'buff':if(!t)break;{const bv=(f.val!==undefined?f.val:f.value)||0;const bd=(f.dur||f.duration||1);t.buffs.push({stat:f.stat,value:bv,duration:bd});if(!f.text)this.addLog(`⬆ ${t.name} +${(bv*100).toFixed(0)}% ${f.stat} for ${bd} turn(s)`,'info');// Harrison guarantee passive: any buff on same-team ally also copies to Harrison
-const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id==='harrison'&&c.alive&&c.id!==t.id);if(harrison&&CHARS.harrison.harrisonGuarantee){harrison.buffs.push({stat:f.stat,value:bv,duration:bd});this.addLog(`👟 Harrison Passive: copied ${f.stat} buff from ${t.name}!`,'info')}}break;
-        case'debuff':if(!t)break;{const dv=(f.val!==undefined?f.val:f.value)||0;const dd=(f.dur||f.duration||1);t.debuffs.push({stat:f.stat,value:dv,duration:dd});if(!f.text)this.addLog(`⬇ ${t.name} ${f.stat} ${(dv*100).toFixed(0)}% for ${dd} turn(s)`,'info');}break;
-        case'dot':if(!t)break;t.dots.push({amount:(f.amount||0),duration:(f.dur||f.duration||4)});break;
-        case'stamina':if(!t)break;{const prev=t.stamina;t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));if(!f.text)this.addLog(`⚡ ${t.name} stamina +${f.amount} (${prev}→${t.stamina}/${t.maxStamina})`, 'info');}break;
-        case'stealStamina':{const fr=all.find(c=>c.id===f.from),to=all.find(c=>c.id===f.to);if(fr&&to){const stolen=Math.min(fr.stamina,f.amount||1);fr.stamina-=stolen;to.stamina=Math.min(to.maxStamina,to.stamina+stolen)}break}
-        case'mark':if(!t)break;t.marks=t.marks||{};t.marks[f.mtype]=Math.min(f.max||3,(t.marks[f.mtype]||0)+(f.stacks||1));break;
-        case'cleanse':if(!t)break;t.debuffs=(t.debuffs||[]).slice(f.count||1);break;
-        case'curse':if(!t)break;t.curses.push({skipChance:f.skipChance||0.5,trueDmgRatio:f.trueDmgRatio||0.1,duration:(f.dur||f.duration||2)});break;
-        case'sitout':if(!t)break;t.sitOut=(f.dur||f.duration||2);t.alive=false;break;
+        case'truedamage':
+          if(!t)break;
+          t.hp=Math.max(0,t.hp-(f.amount||0));
+          {const msg=f.text?`${f.text}  →  ${t.hp}/${t.maxHp} HP`:`⚡ ${t.name} takes ${f.amount||0} TRUE damage  →  ${t.hp}/${t.maxHp} HP`;
+          this.addLog(msg,'truedamage');}
+          if(t.hp<=0)this.kill(t);break;
+        case'heal':{
+          if(!t)break;
+          const ov=Math.max(0,(t.hp+(f.amount||0))-t.maxHp);
+          t.hp=Math.min(t.maxHp,t.hp+(f.amount||0));
+          if(ov>0){t.shield=(t.shield||0)+ov;}
+          const healMsg=f.text?`${f.text}  →  ${t.hp}/${t.maxHp} HP${ov>0?` (+🛡${ov})`:''}`:
+            ov>0?`💚 ${t.name} heals ${f.amount} HP  →  FULL, ${ov} overflow → 🛡shield`:
+            `💚 ${t.name} heals ${f.amount} HP  →  ${t.hp}/${t.maxHp} HP`;
+          this.addLog(healMsg,'heal');break}
+        case'shield':
+          if(!t)break;
+          t.shield=(t.shield||0)+(f.amount||0);
+          {const msg=f.text?`${f.text}  (🛡${t.shield} total)`:`🛡 ${t.name} gains ${f.amount} shield  →  🛡${t.shield} total`;
+          this.addLog(msg,'shield');}break;
+        case'stun':
+          if(!t)break;
+          t.stunned=true;t.stunDur=(f.dur||f.duration||1);
+          {const msg=f.text||`😵 ${t.name} is STUNNED for ${t.stunDur} turn(s)!`;
+          this.addLog(msg,'stun');}break;
+        case'buff':if(!t)break;{
+          const bv=(f.val!==undefined?f.val:f.value)||0;
+          const bd=(f.dur||f.duration||1);
+          t.buffs.push({stat:f.stat,value:bv,duration:bd});
+          const buffMsg=f.text||`⬆ ${t.name}: ${f.stat} +${(bv*100).toFixed(0)}% for ${bd} turns`;
+          this.addLog(buffMsg,'buff');
+          // Harrison passive: copy buff to Harrison if on same team
+          const sameTeam=t.teamId===1?this.t1:this.t2;
+          const harrison=sameTeam.find(c=>c.id==='harrison'&&c.alive&&c.id!==t.id);
+          if(harrison&&CHARS.harrison.harrisonGuarantee){
+            harrison.buffs.push({stat:f.stat,value:bv,duration:bd});
+            this.addLog(`👟 Harrison copies ${f.stat} buff from ${t.name}!`,'info');
+          }}break;
+        case'debuff':if(!t)break;{
+          const dv=(f.val!==undefined?f.val:f.value)||0;
+          const dd=(f.dur||f.duration||1);
+          t.debuffs.push({stat:f.stat,value:dv,duration:dd});
+          const debuffMsg=f.text||`⬇ ${t.name}: ${f.stat} ${(dv*100).toFixed(0)}% for ${dd} turns`;
+          this.addLog(debuffMsg,'debuff');}break;
+        case'dot':if(!t)break;
+          t.dots.push({amount:(f.amount||0),duration:(f.dur||f.duration||4)});
+          if(f.text)this.addLog(f.text,'dot');
+          else this.addLog(`☠ ${t.name} afflicted with bleed: ${f.amount}/turn for ${f.dur||4} turns`,'dot');
+          break;
+        case'stamina':if(!t)break;{
+          const prev=t.stamina;
+          t.stamina=Math.min(t.maxStamina,(t.stamina||0)+(f.amount||0));
+          const msg=f.text||`⚡ ${t.name}: +${f.amount} stamina (${prev}→${t.stamina}/${t.maxStamina})`;
+          this.addLog(msg,'info');}break;
+        case'stealStamina':{
+          const fr=all.find(c=>c.id===f.from),to=all.find(c=>c.id===f.to);
+          if(fr&&to){const stolen=Math.min(fr.stamina,f.amount||1);fr.stamina-=stolen;to.stamina=Math.min(to.maxStamina,to.stamina+stolen);
+          if(f.text)this.addLog(f.text,'info');
+          else this.addLog(`🔄 ${fr.name} loses ${stolen} stamina → ${to.name}`,'info');}break}
+        case'mark':if(!t)break;
+          t.marks=t.marks||{};
+          t.marks[f.mtype]=Math.min(f.max||3,(t.marks[f.mtype]||0)+(f.stacks||1));
+          if(f.text)this.addLog(f.text,'mark');break;
+        case'cleanse':if(!t)break;
+          t.debuffs=(t.debuffs||[]).slice(f.count||1);
+          if(f.text)this.addLog(f.text,'info');
+          else this.addLog(`✨ ${t.name}: ${f.count||1} debuff(s) cleansed`,'info');break;
+        case'curse':if(!t)break;
+          t.curses.push({skipChance:f.skipChance||0.5,trueDmgRatio:f.trueDmgRatio||0.1,duration:(f.dur||f.duration||2)});
+          if(f.text)this.addLog(f.text,'curse');
+          else this.addLog(`📖 ${t.name} is CURSED for ${f.dur||2} turns`,'curse');break;
+        case'defect':if(!t)break;
+          // Enemy is debuffed and "defects" (AI will target own team next turn — simplified as damage reduction)
+          t.debuffs.push({stat:'damage',value:-.30,duration:1});
+          {const msg=f.text||`💸 ${t.name} has been bought out! -30% ATK, targets own team next turn`;
+          this.addLog(msg,'debuff');}break;
+        case'sitout':if(!t)break;t.sitOut=(f.dur||f.duration||2);t.alive=false;
+          if(f.text)this.addLog(f.text,'info');break;
         case'ko':if(!t)break;this.kill(t);break;
-        case'reduceTrigger':if(!t)break;t.tv=Math.max(0,t.tv-(f.amount||1));break;
+        case'reduceTrigger':if(!t)break;
+          t.tv=Math.max(0,t.tv-(f.amount||1));
+          if(f.text)this.addLog(f.text,'info');
+          else this.addLog(`📉 ${t.name}: TV -${f.amount} (now ${t.tv}/10)`,'info');break;
+        case'text':break; // already logged above via top-level f.text check
       }
     }
   }
@@ -1269,7 +1362,7 @@ const sameTeam=t.teamId===1?this.t1:this.t2;const harrison=sameTeam.find(c=>c.id
     });
   }
   winner(){const a=this.t1.some(c=>c.alive),b=this.t2.some(c=>c.alive);if(!a)return 2;if(!b)return 1;return null}
-  addLog(msg,type='info'){this.log.push({msg,type,r:this.round});if(this.log.length>200)this.log.shift()}
+  addLog(msg,type='info'){if(!msg)return;this.log.push({msg:String(msg),type:type||'info',r:this.round});if(this.log.length>300)this.log.shift()}
   aiAct(){
     const actor=this.getCur();if(!actor)return null;
     const en=this.enemies();if(!en.length)return null;
@@ -1609,8 +1702,10 @@ const G={
           <div class="f-stam">${Array(ch.maxStamina).fill(0).map((_,i)=>`<div class="sp${i<ch.stamina?' on':''}${ch.stamina<=2&&i<ch.stamina?' low':ch.stamina<=4&&i<ch.stamina?' warn':''}"></div>`).join('')}</div>
         </div>
         <div class="f-meta"><div class="f-trigger${ch.tv>=10?' ult-ready':''}">${ch.tv>=10?'💥':'⚡'}${ch.tv}/10</div></div>`;
-      if(ch.alive&&key==='t2')d.addEventListener('click',()=>this.selTarget(ch.id));
-      if(ch.alive&&key==='t1')d.addEventListener('click',()=>this.selAlly(ch.id));
+      if(ch.alive){
+        // Click routing depends on current actor's team, not hardcoded key
+        d.addEventListener('click',()=>this.selFighter(ch.id,key));
+      }
       c.appendChild(d);
     });
   },
@@ -1620,7 +1715,16 @@ const G={
     const actor=st.cChar;
     const isPlayer=st.cTeam===1||this.mode==='pvp';
     if(!actor||st.state!=='BATTLE'){p.innerHTML=`<div class="ai-waiting">AI THINKING<span class="ai-dots"></span></div>`;return;}
-    if(!isPlayer){p.innerHTML=`<div class="ai-waiting">🤖 AI THINKING<span class="ai-dots"></span></div>`;return;}
+    if(!isPlayer){
+      // Show AI actor info while thinking (will be overwritten by aiTurn with action details)
+      const tvFull=actor.tv>=10;
+      p.innerHTML=`<div class="ai-waiting">
+        <span style="font-size:13px;color:${tvFull?'var(--gold)':'var(--txt2)'}">${tvFull?'💥':'🤖'} ${actor.emoji} ${actor.name}</span>
+        <span style="font-size:10px;font-family:var(--fM);opacity:.6;margin-top:2px">${actor.hp}/${actor.maxHp} HP · ⚡${actor.stamina}sp · TV ${actor.tv}/10${tvFull?' — ULT READY':''}</span>
+        <span class="ai-dots" style="margin-top:4px"></span>
+      </div>`;
+      return;
+    }
     if(actor.stunned){
       p.innerHTML=`<div class="ai-waiting" style="color:var(--gold)">😵 ${actor.name.toUpperCase()} IS STUNNED — TURN SKIPPED<br><span style="font-size:12px;opacity:.6;font-family:var(--fM)">${actor.stunDur} turn(s) remaining</span></div>
       <div style="text-align:center;margin-top:12px"><button class="btn-ghost" style="font-size:13px;padding:8px 28px" onclick="G.doStunSkip()">⏭ SKIP TURN</button></div>`;
@@ -1685,24 +1789,19 @@ const G={
 
   renderLog(entries){
     const c=document.getElementById('log-feed');
-    // Only re-render if new entries added (compare length)
-    const prev=parseInt(c.dataset.len||'0');
-    if(entries.length===prev&&c.children.length>0)return;
-    c.dataset.len=entries.length;
     c.innerHTML='';
     // Show last 60 entries, oldest at top, newest at bottom
     const show=entries.slice(-60);
     let lastRound=-1;
     let lastTeam='';
     show.forEach((e,i)=>{
-      // ── Round separator ──
-      if(e.r!==lastRound&&e.r>0){
+      // ── Round separator (only when round number increases in the displayed window) ──
+      if(e.r!==lastRound&&e.r>0&&e.type!=='system'&&!(e.msg&&e.msg.startsWith('━'))){
         const sep=document.createElement('div');
         sep.className='log-sep';
         sep.innerHTML=`<span>── ROUND ${e.r} ──</span>`;
         c.appendChild(sep);
         lastRound=e.r;
-        lastTeam='';
       }
       // ── Entry ──
       const d=document.createElement('div');
@@ -1774,10 +1873,24 @@ const G={
   },
 
   selTarget(id){if(this.pendSk)this.execWith([id])},
-  selAlly(id){
+  selAlly(id){if(this.pendSk)this.execWith([id])},
+
+  // Smart click router — works correctly for both P1 and P2 in PVP
+  selFighter(id, key){
     if(!this.pendSk)return;
-    const sk=this.eng.getCur()?.skills?.[this.pendSk];
-    if(sk&&['heal','buff'].includes(sk.type))this.execWith([id]);
+    const actor=this.eng.getCur();
+    if(!actor)return;
+    const sk=this.pendSk==='ultimate'
+      ?actor.skills?.ultimate
+      :actor.skills?.[this.pendSk];
+    const tgt=sk?.targeting||'single_enemy';
+    const actorTeam=actor.teamId; // 1 or 2
+    const clickedTeam=key==='t1'?1:2;
+    const clickedEnemy=clickedTeam!==actorTeam;
+
+    if(tgt==='single_enemy'&&clickedEnemy)this.execWith([id]);
+    else if(tgt==='single_ally'&&!clickedEnemy)this.execWith([id]);
+    // AoE/self skills don't need card clicks — they auto-fire from useSk
   },
 
   cancelTgt(){
@@ -1802,7 +1915,28 @@ const G={
 
   aiTurn(){
     const a=this.eng.aiAct();if(!a)return;
-    setTimeout(()=>{const st=this.eng.act(a.atype,a.skey,a.tids);this.render(st)},1100);
+    const actor=this.eng.getCur();
+    const isUlt=a.atype==='ultimate';
+    const isRem=a.atype==='reminisce';
+    // Show what the AI is actually about to do in the action panel
+    const p=document.getElementById('action-inner');
+    if(p&&actor){
+      if(isUlt){
+        const ultName=actor.skills?.ultimate?.name||'Ultimate';
+        p.innerHTML=`<div class="ai-waiting" style="color:var(--gold);font-size:14px;letter-spacing:2px">
+          💥 ${actor.name.toUpperCase()}<br>
+          <span style="font-size:11px;color:var(--txt2);margin-top:4px;display:block">UNLEASHING:</span>
+          <span style="color:var(--gold);font-size:15px;margin-top:2px;display:block">${ultName}</span>
+          <span class="ai-dots" style="font-size:18px;margin-top:6px;display:block"></span>
+        </div>`;
+      } else {
+        const skName=a.skey?actor.skills?.[a.skey]?.name:'';
+        p.innerHTML=`<div class="ai-waiting">🤖 ${actor.name} — ${skName||'thinking'}<span class="ai-dots"></span></div>`;
+      }
+    }
+    // Ultimates get a longer dramatic delay; regular skills are snappier
+    const delay=isUlt?1800:800+Math.random()*400;
+    setTimeout(()=>{const st=this.eng.act(a.atype,a.skey,a.tids);this.render(st)},delay);
   },
 
   gameOver(w){
