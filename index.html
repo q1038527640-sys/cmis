@@ -4,32 +4,39 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
 <title>CMAC International Combat Ver 2.4</title>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow+Condensed:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
 <style>
 /* ══════════════════════════════════════════
    CMAC FIGHTING GAME — AAA VISUAL DESIGN
    Aesthetic: Dark Military × Neon Fighting
    ══════════════════════════════════════════ */
 :root {
-  --bg0:#03050d; --bg1:#070b18; --bg2:#0c1022; --bg3:#111829; --bg4:#162035;
-  --rim:#1e2d45; --rim2:#243352;
-  --c1:#00d4ff; --c1d:rgba(0,212,255,.18); --c1g:rgba(0,212,255,.06);
-  --c2:#ff5500; --c2d:rgba(255,85,0,.18); --c2g:rgba(255,85,0,.06);
-  --gold:#f0c040; --goldd:rgba(240,192,64,.2);
-  --grn:#39ff88; --red:#ff3344; --pur:#b06aff;
-  --txt:#c8d8f0; --txt2:#6a80a8; --txt3:#334466;
-  --sssr:linear-gradient(135deg,#ff3a00,#f0c040,#b06aff);
-  --ssr:linear-gradient(135deg,#f0c040,#ff8800);
-  --sr:linear-gradient(135deg,#00d4ff,#6060ff);
-  --r:linear-gradient(135deg,#39ff88,#00aa55);
+  /* ── Backgrounds: deep obsidian, not blue-tinted ── */
+  --bg0:#080808; --bg1:#0e0e0e; --bg2:#141414; --bg3:#1a1a1a; --bg4:#202020;
+  --rim:#2a2a2a; --rim2:#363636;
+  /* ── Team 1: steel blue — cold, precise ── */
+  --c1:#4d9fff; --c1d:rgba(77,159,255,.15); --c1g:rgba(77,159,255,.05);
+  /* ── Team 2: ember orange — aggressive ── */
+  --c2:#ff6b2b; --c2d:rgba(255,107,43,.15); --c2g:rgba(255,107,43,.05);
+  /* ── Accents ── */
+  --gold:#e8b84b; --goldd:rgba(232,184,75,.18);
+  --grn:#34c97a; --red:#f04858; --pur:#9d6fe8;
+  /* ── Text: neutral slate, not blue ── */
+  --txt:#d4d4d4; --txt2:#7a7a7a; --txt3:#3a3a3a;
+  /* ── Rarity gradients ── */
+  --sssr:linear-gradient(135deg,#e8b84b,#f04858,#9d6fe8);
+  --ssr:linear-gradient(135deg,#e8b84b,#d4913a);
+  --sr:linear-gradient(135deg,#4d9fff,#2563eb);
+  --r:linear-gradient(135deg,#34c97a,#16a05a);
+  /* ── Fonts ── */
   --fT:'Bebas Neue',sans-serif;
-  --fU:'Barlow Condensed',sans-serif;
+  --fU:'Inter',sans-serif;
   --fM:'JetBrains Mono',monospace;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{font-size:15px;scroll-behavior:smooth}
-body{font-family:var(--fU);background:var(--bg0);color:var(--txt);min-height:100vh;overflow-x:hidden}
-::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--c1);border-radius:3px}
+body{font-family:var(--fU);font-size:14px;background:var(--bg0);color:var(--txt);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg0)}::-webkit-scrollbar-thumb{background:var(--gold);border-radius:2px;opacity:.6}
 
 /* ── NOISE OVERLAY ── */
 body::before{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");opacity:.4;pointer-events:none;z-index:0}
@@ -44,23 +51,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 #title-screen{
   align-items:center;justify-content:center;gap:0;
   background:
-    radial-gradient(ellipse 60% 40% at 50% 0%,rgba(0,212,255,.12) 0%,transparent 70%),
-    radial-gradient(ellipse 40% 60% at 20% 100%,rgba(255,85,0,.1) 0%,transparent 60%),
-    linear-gradient(180deg,#03050d 0%,#060a18 50%,#03050d 100%);
+    radial-gradient(ellipse 50% 35% at 50% -5%,rgba(77,159,255,.08) 0%,transparent 70%),
+    radial-gradient(ellipse 30% 40% at 85% 80%,rgba(232,184,75,.06) 0%,transparent 60%),
+    linear-gradient(180deg,#050505 0%,#0a0a0a 50%,#050505 100%);
   text-align:center;padding:40px 20px;
 }
 
 /* Horizontal scan line */
 #title-screen::after{
-  content:'';position:absolute;top:0;left:0;right:0;height:2px;
-  background:linear-gradient(90deg,transparent,var(--c1),transparent);
-  animation:scanDown 6s linear infinite;opacity:.6;
+  content:'';position:absolute;top:0;left:0;right:0;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(77,159,255,.4),transparent);
+  animation:scanDown 9s linear infinite;opacity:.5;
 }
 @keyframes scanDown{0%{top:0;opacity:.8}100%{top:100%;opacity:0}}
 
 .title-eyebrow{
-  font-family:var(--fM);font-size:11px;letter-spacing:8px;
-  color:var(--c1);opacity:.7;margin-bottom:20px;
+  font-family:var(--fM);font-size:10px;letter-spacing:10px;
+  color:var(--txt2);opacity:.9;margin-bottom:24px;
   text-transform:uppercase;
 }
 
@@ -68,22 +75,22 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   font-family:var(--fT);
   font-size:clamp(52px,9vw,120px);
   line-height:.92;
-  letter-spacing:3px;
-  background:linear-gradient(170deg,#ffffff 0%,#c8d8f0 40%,var(--c1) 80%);
+  letter-spacing:6px;
+  background:linear-gradient(170deg,#ffffff 0%,#e0e0e0 50%,var(--gold) 100%);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
-  filter:drop-shadow(0 0 40px rgba(0,212,255,.4));
-  animation:titleGlow 4s ease-in-out infinite alternate;
+  filter:drop-shadow(0 0 30px rgba(232,184,75,.25));
+  animation:titleGlow 5s ease-in-out infinite alternate;
 }
 @keyframes titleGlow{
-  from{filter:drop-shadow(0 0 30px rgba(0,212,255,.3))}
-  to{filter:drop-shadow(0 0 60px rgba(0,212,255,.7)) drop-shadow(0 0 100px rgba(0,212,255,.3))}
+  from{filter:drop-shadow(0 0 20px rgba(232,184,75,.2))}
+  to{filter:drop-shadow(0 0 50px rgba(232,184,75,.5))}
 }
 
 .title-sub{
-  font-family:var(--fT);font-size:clamp(16px,2.5vw,28px);
-  letter-spacing:10px;color:var(--c2);
-  margin-top:4px;
-  filter:drop-shadow(0 0 15px rgba(255,85,0,.5));
+  font-family:var(--fM);font-size:clamp(11px,1.5vw,14px);
+  letter-spacing:8px;color:var(--txt2);
+  margin-top:8px;
+  text-transform:uppercase;
 }
 .title-ver{
   font-family:var(--fM);font-size:10px;letter-spacing:4px;
@@ -93,7 +100,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 /* Decorative divider */
 .title-divider{
   width:280px;height:1px;margin:30px auto;
-  background:linear-gradient(90deg,transparent,var(--c1),var(--gold),var(--c2),transparent);
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
   position:relative;
 }
 .title-divider::before,.title-divider::after{
@@ -107,17 +114,17 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   display:flex;gap:32px;justify-content:center;margin-bottom:40px;
 }
 .stat-item{text-align:center}
-.stat-num{font-family:var(--fT);font-size:36px;color:var(--c1);line-height:1}
+.stat-num{font-family:var(--fT);font-size:36px;color:var(--gold);line-height:1}
 .stat-lbl{font-size:11px;letter-spacing:3px;color:var(--txt3);text-transform:uppercase;margin-top:2px}
 
 /* Title Buttons */
 .title-btns{display:flex;flex-direction:column;gap:14px;align-items:center}
 .btn-fire{
-  font-family:var(--fT);font-size:22px;letter-spacing:4px;
-  padding:14px 56px;border:none;cursor:pointer;
-  background:linear-gradient(135deg,#ff5500,#ff2200);
+  font-family:var(--fT);font-size:20px;letter-spacing:5px;
+  padding:13px 52px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,#d4522a,#b83a18);
   color:#fff;position:relative;overflow:hidden;
-  clip-path:polygon(12px 0%,100% 0%,calc(100% - 12px) 100%,0% 100%);
+  clip-path:polygon(10px 0%,100% 0%,calc(100% - 10px) 100%,0% 100%);
   transition:all .25s;
   box-shadow:0 0 30px rgba(255,85,0,.4),inset 0 1px 0 rgba(255,255,255,.15);
 }
@@ -131,7 +138,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 .btn-ice{
   font-family:var(--fT);font-size:18px;letter-spacing:3px;
-  padding:11px 40px;border:1px solid var(--c1);
+  padding:11px 40px;border:1px solid rgba(77,159,255,.4);
   background:rgba(0,212,255,.06);color:var(--c1);cursor:pointer;
   clip-path:polygon(8px 0%,100% 0%,calc(100% - 8px) 100%,0% 100%);
   transition:all .25s;
@@ -308,13 +315,13 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .hud-bar{
   display:grid;grid-template-columns:1fr auto 1fr;
   align-items:center;gap:12px;
-  background:var(--bg2);border:1px solid var(--rim);
+  background:var(--bg1);border:1px solid var(--rim);
   border-radius:3px;padding:8px 16px;
   position:relative;overflow:hidden;
 }
 .hud-bar::after{
   content:'';position:absolute;bottom:0;left:0;right:0;height:1px;
-  background:linear-gradient(90deg,transparent,var(--c1),var(--gold),var(--c2),transparent);
+  background:linear-gradient(90deg,transparent,var(--gold),transparent);
   opacity:.5;
 }
 .hud-t1{font-family:var(--fT);font-size:18px;letter-spacing:3px;color:var(--c1)}
@@ -337,7 +344,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 }
 
 .team-zone{
-  background:var(--bg2);border:1px solid var(--rim);
+  background:var(--bg1);border:1px solid var(--rim);
   border-radius:4px;padding:10px;
 }
 .zone-label{
@@ -435,7 +442,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* Action Panel */
 .action-zone{
-  background:var(--bg2);border:1px solid var(--rim);
+  background:var(--bg1);border:1px solid var(--rim);
   border-radius:4px;padding:14px;
   display:flex;flex-direction:column;gap:10px;overflow:hidden;
 }
@@ -536,7 +543,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 
 /* ── BATTLE LOG ── */
 .log-zone{
-  background:var(--bg2);border:1px solid var(--rim);
+  background:var(--bg1);border:1px solid var(--rim);
   border-radius:4px;padding:12px;
   display:flex;flex-direction:column;gap:8px;overflow:hidden;
   min-height:320px;max-height:480px;
@@ -713,7 +720,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 .log-sep span{white-space:nowrap;padding:0 4px}
 
 /* ── LOG ENTRY — bolder action lines ── */
-.log-entry.action{font-weight:600;font-size:12px;color:#ffaa77;padding-top:4px}
+.log-entry.action{font-weight:600;font-size:12px;color:var(--txt);padding-top:4px;letter-spacing:.3px}
 .log-entry.ultimate{font-weight:700;font-size:12px;letter-spacing:.5px}
 .log-entry.death{font-size:12px;font-weight:700;background:rgba(255,51,68,.08);padding:4px 7px;border-radius:3px}
 .log-entry.system{font-weight:600}
@@ -754,7 +761,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 }
 .preview-overlay.show{display:flex}
 .preview-modal{
-  background:var(--bg2);border:1px solid var(--rim2);border-radius:10px;
+  background:var(--bg1);border:1px solid var(--rim2);border-radius:10px;
   width:min(560px,95vw);max-height:85vh;overflow-y:auto;
   position:relative;padding:24px;box-shadow:0 0 40px rgba(0,0,0,.8);
 }
@@ -809,7 +816,7 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
 }
 @media(max-width:700px){.sum-grid{grid-template-columns:1fr}}
 .sum-section{
-  background:var(--bg2);border:1px solid var(--rim);border-radius:8px;padding:12px;
+  background:var(--bg1);border:1px solid var(--rim);border-radius:8px;padding:12px;
 }
 .sum-title{
   font-family:var(--fM);font-size:10px;letter-spacing:3px;color:var(--txt2);
@@ -833,6 +840,24 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   border-top:1px solid var(--rim);
 }
 .sum-footer b{color:var(--c1)}
+
+/* ── TAKEN CHARACTER CARDS ── */
+.char-card.taken-t1{
+  border-color:rgba(77,159,255,.4)!important;
+  opacity:.55;cursor:not-allowed;
+  background:rgba(77,159,255,.04)!important;
+}
+.char-card.taken-t2{
+  border-color:rgba(255,107,43,.4)!important;
+  opacity:.55;cursor:not-allowed;
+  background:rgba(255,107,43,.04)!important;
+}
+.char-card.taken-t1::after,.char-card.taken-t2::after{
+  content:'PICKED';position:absolute;top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  font-family:var(--fM);font-size:9px;letter-spacing:3px;
+  color:rgba(255,255,255,.35);pointer-events:none;
+}
 </style>
 </head>
 <body>
@@ -1024,10 +1049,10 @@ const CHARS={
     skills:{
       skill1:{name:'Jacket Combo',type:'physical',targeting:'single_enemy',cost:1,tv:1,desc:'90% Physical Damage',
         exec(u,ts){const dmg=calcDamage(u,ts[0],.9,'physical');return[{type:'damage',target:ts[0].id,amount:dmg,text:`🥊 Jacket Combo! → ${ts[0].name} takes ${dmg} physical damage`}]}},
-      skill2:{name:'Dab Me Up',type:'heal',targeting:'single_ally',cost:2,tv:2,desc:'Ally heals 25% HP + 30% ATK buff',
-        exec(u,ts){const t=ts[0];const h=Math.floor(t.maxHp*.25);return[{type:'heal',target:t.id,amount:h,text:`🤜 Dab Me Up! → ${t.name} heals ${h} HP`},{type:'buff',target:t.id,stat:'damage',val:.30,dur:2,text:`🤜 ${t.name} ATK +30% for 2 turns!`}]}},
-      skill3:{name:'Where My Hug At',type:'heal',targeting:'all_allies',cost:3,tv:4,desc:'Full team heal 40% HP + 200 shield',
-        exec(u,ts,all,al){const targets=[u,...al];return targets.flatMap(t=>{const h=Math.floor(t.maxHp*.40);return[{type:'heal',target:t.id,amount:h,text:`🤗 ${t.name} gets a hug! Heals ${h} HP`},{type:'shield',target:t.id,amount:200,text:`🤗 ${t.name} gains 200 shield`}]})}},
+      skill2:{name:'Dab Me Up',type:'heal',targeting:'single_ally',cost:2,tv:2,desc:'Ally heals 18% HP + 25% ATK buff',
+        exec(u,ts){const t=ts[0];const h=Math.floor(t.maxHp*.18);return[{type:'heal',target:t.id,amount:h,text:`🤜 Dab Me Up! → ${t.name} heals ${h} HP`},{type:'buff',target:t.id,stat:'damage',val:.25,dur:2,text:`🤜 ${t.name} ATK +25% for 2 turns!`}]}},
+      skill3:{name:'Where My Hug At',type:'heal',targeting:'all_allies',cost:3,tv:4,desc:'Full team heal 25% HP + 120 shield',
+        exec(u,ts,all,al){const targets=[u,...al];return targets.flatMap(t=>{const h=Math.floor(t.maxHp*.25);return[{type:'heal',target:t.id,amount:h,text:`🤗 ${t.name} gets a hug! Heals ${h} HP`},{type:'shield',target:t.id,amount:120,text:`🤗 ${t.name} gains 120 shield`}]})}},
       ultimate:{name:'Spirit Art: Four Heavenly Kings',targeting:'all_enemies',desc:'4 kings at 135% magic, last hit crits lowest HP target',
         exec(u,ts){const fx=[];const names=['Azure Dragon','White Tiger','Vermilion Bird','Black Tortoise'];for(let i=0;i<4;i++){const t=i===3?[...ts].sort((a,b)=>a.hp-b.hp)[0]:ts[i%ts.length];const dmg=calcDamage(u,t,1.35,'magic');fx.push({type:'damage',target:t.id,amount:i===3?Math.floor(dmg*1.5):dmg,text:`👊 ${names[i]} Heavenly King Strike ${i+1}! → ${t.name} takes ${i===3?Math.floor(dmg*1.5):dmg} damage${i===3?' 💥CRIT!':''}`})}return fx}}
     },
@@ -1602,6 +1627,8 @@ const G={
       // Main click = pick; preview button = show skill breakdown
       d.addEventListener('click',(e)=>{
         if(e.target.classList.contains('card-preview-btn'))return;
+        // Block click if already on either team
+        if(this.t1.includes(ch.id)||this.t2.includes(ch.id))return;
         this.pick(ch.id,d);
       });
       d.querySelector('.card-preview-btn').addEventListener('click',(e)=>{
@@ -1774,6 +1801,9 @@ const G={
     if(this.aiPicking)return;
 
     const in1=this.t1.includes(id),in2=this.t2.includes(id);
+    // No duplicate chars across both teams
+    const takenByOther=(in2&&this.mode==='pvp'&&this.pickTurn===1)||(in1&&this.pickTurn===2);
+    if(takenByOther)return; // already on the other team — block
 
     // Clicking an already-picked card deselects it
     if(in1){
@@ -1851,6 +1881,14 @@ const G={
     s('t1c',`${this.t1.length}/4`);s('t2c',`${this.t2.length}/4`);
     s('t1cnt',this.t1.length);s('t2cnt',this.t2.length);
     s('p1',this.t1.length);s('p2',this.t2.length);
+    // Dim cards already taken by the other team so players see what's off-limits
+    const allTaken=new Set([...this.t1,...this.t2]);
+    document.querySelectorAll('.char-card').forEach(card=>{
+      const cid=card.dataset.id;
+      const inT1=this.t1.includes(cid), inT2=this.t2.includes(cid);
+      card.classList.toggle('taken-t1',inT1);
+      card.classList.toggle('taken-t2',inT2);
+    });
   },
 
   rmv(team,id){
