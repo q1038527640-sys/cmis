@@ -816,16 +816,23 @@ body::before{content:'';position:fixed;inset:0;background-image:url("data:image/
   margin-bottom:8px;padding-bottom:6px;border-bottom:1px solid var(--rim);
 }
 .sum-row{
-  display:flex;align-items:center;gap:6px;padding:3px 0;
+  display:flex;align-items:center;gap:5px;padding:4px 2px;
   font-family:var(--fU);font-size:12px;color:var(--txt);
+  border-bottom:1px solid rgba(255,255,255,.04);
 }
-.sum-order{font-family:var(--fM);font-size:10px;color:var(--txt3);width:24px;flex-shrink:0}
-.sum-val{margin-left:auto;font-family:var(--fM);font-size:10px;color:var(--txt2);white-space:nowrap}
+.sum-row:last-child{border-bottom:none}
+.sum-order{font-family:var(--fM);font-size:9px;color:var(--txt3);width:22px;flex-shrink:0;text-align:right}
+.sum-emo{font-size:14px;flex-shrink:0;width:18px;text-align:center}
+.sum-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sum-team{font-family:var(--fM);font-size:9px;padding:1px 4px;border-radius:2px;flex-shrink:0}
+.sum-val{margin-left:auto;font-family:var(--fM);font-size:10px;color:var(--txt2);white-space:nowrap;flex-shrink:0;display:flex;align-items:center;gap:4px}
+.sum-ult-name{color:var(--gold);font-size:9px;max-width:100px;overflow:hidden;text-overflow:ellipsis}
 .sum-footer{
-  font-family:var(--fM);font-size:10px;letter-spacing:2px;
-  color:var(--txt3);text-align:center;margin-top:4px;
+  font-family:var(--fM);font-size:10px;letter-spacing:1px;
+  color:var(--txt3);text-align:center;margin-top:8px;padding-top:8px;
+  border-top:1px solid var(--rim);
 }
-.sum-footer b{color:var(--txt2)}
+.sum-footer b{color:var(--c1)}
 </style>
 </head>
 <body>
@@ -1331,7 +1338,11 @@ class Engine{
           if(loc==='head')dmg=Math.floor(dmg*1.5);
           const shielded=t.shield>0?Math.min(t.shield,Math.floor(dmg*.5)):0;
           if(shielded>0){t.shield-=shielded;dmg-=shielded;}
-          t.hp=Math.max(0,t.hp-dmg);if(this._curActorName)this.summary.dmgDealt[this._curActorName]=(this.summary.dmgDealt[this._curActorName]||0)+dmg;
+          t.hp=Math.max(0,t.hp-dmg);if(this._curActorName){
+            const cur=this.all().find(c=>c.name===this._curActorName);
+            if(!this.summary.dmgDealt[this._curActorName])this.summary.dmgDealt[this._curActorName]={total:0,teamId:cur?.teamId||0,emoji:cur?.emoji||''};
+            this.summary.dmgDealt[this._curActorName].total+=dmg;
+          }
           // Single clean log line: skill flavor text + actual numbers
           const headStr=loc==='head'?' 💥HEADSHOT':'';
           const shStr=shielded>0?` (🛡blocked ${shielded})`:'';
@@ -1344,10 +1355,15 @@ class Engine{
           if(t.hp<=0)this.kill(t);break}
         case'truedamage':
           if(!t)break;
-          t.hp=Math.max(0,t.hp-(f.amount||0));
-          {const msg=f.text?`${f.text}  →  ${t.hp}/${t.maxHp} HP`:`⚡ ${t.name} takes ${f.amount||0} TRUE damage  →  ${t.hp}/${t.maxHp} HP`;
-          this.addLog(msg,'truedamage');}
-          if(t.hp<=0)this.kill(t);break;
+          {const tdAmt=f.amount||0;t.hp=Math.max(0,t.hp-tdAmt);
+          if(this._curActorName){
+            const cur=this.all().find(c=>c.name===this._curActorName);
+            if(!this.summary.dmgDealt[this._curActorName])this.summary.dmgDealt[this._curActorName]={total:0,teamId:cur?.teamId||0,emoji:cur?.emoji||''};
+            this.summary.dmgDealt[this._curActorName].total+=tdAmt;
+          }
+          const msg=f.text?`${f.text}  →  ${t.hp}/${t.maxHp} HP`:`⚡ ${t.name} takes ${tdAmt} TRUE damage  →  ${t.hp}/${t.maxHp} HP`;
+          this.addLog(msg,'truedamage');
+          if(t.hp<=0)this.kill(t);}break;
         case'heal':{
           if(!t)break;
           const healAmt=f.amount||0;
@@ -2173,36 +2189,72 @@ const G={
     const ws=document.getElementById('winner-sub');
     wt.className=`winner-text w${w}`;
     wt.textContent=`TEAM ${w} WINS`;
-    ws.textContent=w===1?'🏆 A Glorious Victory!':'🏆 Comeback Victory!';
-    // Build match summary
+    ws.textContent='🏆 Victory!';
     const sm=document.getElementById('match-summary');
-    if(sm){
-      const sum=this.eng.summary;
-      const rounds=this.eng.round;
-      // Damage leaders
-      const dmgEntries=Object.entries(sum.dmgDealt||{}).sort((a,b)=>b[1]-a[1]).slice(0,5);
-      const dmgHtml=dmgEntries.map(([n,d])=>`<div class="sum-row"><span>${n}</span><span class="sum-val">${d.toLocaleString()} dmg</span></div>`).join('');
-      // Elimination order
-      const killHtml=sum.kills.map((k,i)=>`<div class="sum-row"><span class="sum-order">#${i+1}</span><span>${k.emoji} ${k.name}</span><span class="sum-val ${k.teamId===1?'t1col':'t2col'}">Team ${k.teamId} · R${k.round}</span></div>`).join('');
-      // Ultimates fired
-      const ultHtml=sum.ultimates.map(u=>`<div class="sum-row"><span class="sum-order">R${u.round}</span><span>${u.name}</span><span class="sum-val">${u.ult}</span></div>`).join('') || '<div class="sum-row" style="opacity:.4">No ultimates fired</div>';
-      sm.innerHTML=`
-        <div class="sum-grid">
-          <div class="sum-section">
-            <div class="sum-title">⚔ DAMAGE LEADERS</div>
-            ${dmgHtml||'<div class="sum-row" style="opacity:.4">No data</div>'}
-          </div>
-          <div class="sum-section">
-            <div class="sum-title">💀 ELIMINATION ORDER</div>
-            ${killHtml||'<div class="sum-row" style="opacity:.4">No eliminations</div>'}
-          </div>
-          <div class="sum-section">
-            <div class="sum-title">💥 ULTIMATES FIRED</div>
-            ${ultHtml}
-          </div>
+    if(!sm)return;
+    const sum=this.eng.summary;
+    const rounds=this.eng.round;
+
+    // Damage leaders — new structure {total, teamId, emoji}
+    const dmgEntries=Object.entries(sum.dmgDealt||{})
+      .map(([n,v])=>({name:n,total:typeof v==='object'?v.total:v,teamId:typeof v==='object'?v.teamId:0,emoji:typeof v==='object'?v.emoji:''}))
+      .sort((a,b)=>b.total-a.total).slice(0,6);
+    const dmgHtml=dmgEntries.length?dmgEntries.map(d=>`
+      <div class="sum-row">
+        <span class="sum-emo">${d.emoji}</span>
+        <span class="sum-name">${d.name}</span>
+        <span class="sum-team ${d.teamId===1?'t1col':'t2col'}">T${d.teamId}</span>
+        <span class="sum-val">${d.total.toLocaleString()}</span>
+      </div>`)
+      .join(''):'<div class="sum-row" style="opacity:.4;font-size:11px">No data</div>';
+
+    // Elimination order — colored by the KILLER's team (opposite of victim)
+    // T1 victim → orange (T2 got the kill); T2 victim → blue (T1 got the kill)
+    const killHtml=sum.kills.length?sum.kills.map((k,i)=>`
+      <div class="sum-row">
+        <span class="sum-order">#${i+1}</span>
+        <span class="sum-emo">${k.emoji}</span>
+        <span class="sum-name">${k.name}</span>
+        <span class="sum-val">
+          <span class="sum-team ${k.teamId===1?'t2col':'t1col'}">T${k.teamId===1?2:1} ☠</span>
+          <span style="font-size:9px;opacity:.5">R${k.round}</span>
+        </span>
+      </div>`).join('')
+      :'<div class="sum-row" style="opacity:.4;font-size:11px">No eliminations</div>';
+
+    // Ultimates — show emoji + name + skill
+    const ultHtml=sum.ultimates.length?sum.ultimates.map(u=>`
+      <div class="sum-row">
+        <span class="sum-order">R${u.round}</span>
+        <span class="sum-name">${u.name}</span>
+        <span class="sum-val sum-ult-name">${u.ult}</span>
+      </div>`).join('')
+      :'<div class="sum-row" style="opacity:.4;font-size:11px">No ultimates fired</div>';
+
+    // Total damage for stat line
+    const totalDmg=dmgEntries.reduce((s,d)=>s+d.total,0);
+
+    sm.innerHTML=`
+      <div class="sum-grid">
+        <div class="sum-section">
+          <div class="sum-title">⚔ DAMAGE DEALT</div>
+          ${dmgHtml}
         </div>
-        <div class="sum-footer">Battle lasted <b>${rounds}</b> round${rounds!==1?'s':''} · ${sum.kills.length} eliminations · ${sum.ultimates.length} ultimates</div>`;
-    }
+        <div class="sum-section">
+          <div class="sum-title">💀 ELIMINATION ORDER <span style="font-family:var(--fM);font-size:8px;opacity:.4;float:right;letter-spacing:0">badge = who scored kill</span></div>
+          ${killHtml}
+        </div>
+        <div class="sum-section">
+          <div class="sum-title">💥 ULTIMATES FIRED</div>
+          ${ultHtml}
+        </div>
+      </div>
+      <div class="sum-footer">
+        ${rounds} round${rounds!==1?'s':''} &nbsp;·&nbsp;
+        ${sum.kills.length} eliminations &nbsp;·&nbsp;
+        ${sum.ultimates.length} ultimates &nbsp;·&nbsp;
+        <b>${totalDmg.toLocaleString()}</b> total damage
+      </div>`;
   },
 
   restart(){
